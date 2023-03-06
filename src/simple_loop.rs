@@ -23,16 +23,16 @@ pub fn run(rx: mpsc::Receiver<crate::Event>) {
 
     let mut hist = ndhistogram!(Uniform::new(20, 0.0, 1000.0));
 
+    let sleeper = spin_sleep::SpinSleeper::new(100_000);
+    sleeper.sleep(dur);
+
     // ░█░░░█▀█░█▀█░█▀█
     // ░█░░░█░█░█░█░█▀▀
     // ░▀▀▀░▀▀▀░▀▀▀░▀░░
 
-    let sleeper = spin_sleep::SpinSleeper::new(100_000);
-
+    let mut start = Instant::now();
     let mut iter = 0u64;
     'inner: loop {
-        let start = Instant::now();
-
         crate::midi::send_clock_tick(&mut output);
 
         if iter % 24 == 0 {
@@ -45,6 +45,7 @@ pub fn run(rx: mpsc::Receiver<crate::Event>) {
 
         // record how long we slept
         hist.fill(&((start.elapsed().as_micros() - dur.as_micros()) as f32));
+        start = Instant::now();
 
         crate::midi::send_note_off(&mut output, 34);
 

@@ -2,7 +2,7 @@ use std::{sync::mpsc, thread};
 
 fn main() {
     let (tx, rx) = mpsc::channel::<snorkel::Event>();
-    let t = thread::spawn(|| snorkel::simple_loop::run(rx));
+    let t = thread::spawn(|| snorkel::timerfd::run(rx));
 
     ctrlc::set_handler(move || {
         tx.send(snorkel::Event)
