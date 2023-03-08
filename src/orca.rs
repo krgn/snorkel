@@ -153,12 +153,12 @@ fn is_whitespace(c: char) -> bool {
 }
 
 impl Orca {
-    fn new(rows: usize, cols: usize) -> Orca {
+    pub fn new(rows: usize, cols: usize) -> Orca {
         let data = init_rope(rows, cols);
         Orca { rows, cols, data }
     }
 
-    fn resize(&mut self, rows: usize, cols: usize) {
+    pub fn resize(&mut self, rows: usize, cols: usize) {
         // build new rope...
         let mut new_rope = init_rope(rows, cols);
         // ...and copy old contents into it
@@ -188,19 +188,32 @@ impl Orca {
         self.data = new_rope;
     }
 
-    fn render(&self) -> String {
+    pub fn render(&self) -> String {
         self.data.to_string()
     }
 
     pub fn set_cell(&mut self, x: usize, y: usize, glyph: &str) {
-        if glyph.len() == 0 {
+        let len = glyph.len();
+        if len == 0 || x >= self.cols || y >= self.rows {
             return;
         }
-        if x >= self.cols || y >= self.rows {
-            return;
-        }
-        let idx = y * self.cols + x + y;
-        self.data.replace(idx..idx + glyph.len(), glyph);
+        // general offset in the rope
+        let start = y * self.cols + x + y;
+        // check if the inserted string is longer than the line
+        let oversized = x + len > self.cols;
+        // truncate the end idx if oversized
+        let end = if oversized {
+            start + (self.cols - x)
+        } else {
+            start + len
+        };
+        // truncate the glyph slice if oversized
+        let slc = if oversized {
+            &glyph[..self.cols - x]
+        } else {
+            glyph
+        };
+        self.data.replace(start..end, &slc);
     }
 }
 
@@ -322,6 +335,21 @@ Y⸱⸱⸱X
         let expected = r#"
 ⌌⸱⸱⸱⌍
 ⸱foo⸱
+⸱⸱⸱⸱⸱
+⸱⸱⸱⸱⸱
+⌎⸱⸱⸱⌏
+"#;
+        assert_eq!(expected.trim_start(), rendered);
+    }
+
+    #[test]
+    fn set_cell_should_set_truncate_excess_chars() {
+        let mut orca = Orca::new(5, 5);
+        orca.set_cell(1, 1, "foobar");
+        let rendered = orca.render();
+        let expected = r#"
+⌌⸱⸱⸱⌍
+⸱foob
 ⸱⸱⸱⸱⸱
 ⸱⸱⸱⸱⸱
 ⌎⸱⸱⸱⌏
