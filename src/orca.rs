@@ -192,7 +192,7 @@ impl Orca {
         self.data.to_string()
     }
 
-    pub fn set_cell(&mut self, x: usize, y: usize, glyph: &str) {
+    pub fn paste_slice(&mut self, x: usize, y: usize, glyph: &str) {
         let len = glyph.len();
         if len == 0 || x >= self.cols || y >= self.rows {
             return;
@@ -239,10 +239,10 @@ mod tests {
     }
 
     #[test]
-    fn set_cell_renders_correctly() {
+    fn paste_slice_renders_correctly() {
         let mut orca = Orca::new(4, 20);
-        orca.set_cell(5, 2, "D");
-        orca.set_cell(13, 1, "X");
+        orca.paste_slice(5, 2, "D");
+        orca.paste_slice(13, 1, "X");
         let rendered = orca.render();
         let expected = r#"
 ⌌⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⌍
@@ -256,8 +256,8 @@ mod tests {
     #[test]
     fn resize_bigger_renders_correctly() {
         let mut orca = Orca::new(4, 5);
-        orca.set_cell(3, 2, "D");
-        orca.set_cell(4, 3, "A");
+        orca.paste_slice(3, 2, "D");
+        orca.paste_slice(4, 3, "A");
         let rendered = orca.render();
         let expected = r#"
 ⌌⸱⸱⸱⌍
@@ -281,10 +281,10 @@ mod tests {
     }
 
     #[test]
-    fn set_cell_should_ignore_oob() {
+    fn paste_slice_should_ignore_oob() {
         let mut orca = Orca::new(5, 5);
-        orca.set_cell(6, 2, "X");
-        orca.set_cell(2, 6, "Y");
+        orca.paste_slice(6, 2, "X");
+        orca.paste_slice(2, 6, "Y");
         let rendered = orca.render();
         let expected = r#"
 ⌌⸱⸱⸱⌍
@@ -297,10 +297,10 @@ mod tests {
     }
 
     #[test]
-    fn set_cell_should_set_last() {
+    fn paste_slice_should_set_last() {
         let mut orca = Orca::new(5, 5);
-        orca.set_cell(4, 4, "X");
-        orca.set_cell(0, 4, "Y");
+        orca.paste_slice(4, 4, "X");
+        orca.paste_slice(0, 4, "Y");
         let rendered = orca.render();
         let expected = r#"
 ⌌⸱⸱⸱⌍
@@ -313,9 +313,9 @@ Y⸱⸱⸱X
     }
 
     #[test]
-    fn set_cell_should_ignore_empty_str() {
+    fn paste_slice_should_ignore_empty_str() {
         let mut orca = Orca::new(5, 5);
-        orca.set_cell(0, 4, "");
+        orca.paste_slice(0, 4, "");
         let rendered = orca.render();
         let expected = r#"
 ⌌⸱⸱⸱⌍
@@ -328,9 +328,9 @@ Y⸱⸱⸱X
     }
 
     #[test]
-    fn set_cell_should_set_all_chars() {
+    fn paste_slice_should_set_all_chars() {
         let mut orca = Orca::new(5, 5);
-        orca.set_cell(1, 1, "foo");
+        orca.paste_slice(1, 1, "foo");
         let rendered = orca.render();
         let expected = r#"
 ⌌⸱⸱⸱⌍
@@ -343,9 +343,9 @@ Y⸱⸱⸱X
     }
 
     #[test]
-    fn set_cell_should_set_truncate_excess_chars() {
+    fn paste_slice_should_set_truncate_excess_chars() {
         let mut orca = Orca::new(5, 5);
-        orca.set_cell(1, 1, "foobar");
+        orca.paste_slice(1, 1, "foobar");
         let rendered = orca.render();
         let expected = r#"
 ⌌⸱⸱⸱⌍
@@ -360,8 +360,8 @@ Y⸱⸱⸱X
     #[test]
     fn resize_smaller_renders_correctly() {
         let mut orca = Orca::new(6, 20);
-        orca.set_cell(2, 2, "X");
-        orca.set_cell(17, 4, "F");
+        orca.paste_slice(2, 2, "X");
+        orca.paste_slice(17, 4, "F");
         let rendered = orca.render();
         let expected = r#"
 ⌌⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⌍
