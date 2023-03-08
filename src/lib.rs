@@ -1,3 +1,13 @@
+//! Snorkel!
+//!
+//! 🫧🫧
+//!   🤿
+//!
+
+// TODO: turn this back on
+// #![warn(missing_docs)]
+
+pub mod orca;
 pub mod simple_loop;
 pub mod timerfd;
 
