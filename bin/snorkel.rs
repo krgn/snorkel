@@ -1,71 +1,10 @@
 use crossterm::{
-    cursor,
-    event::{self, Event, KeyCode, KeyEvent},
-    execute, queue, style,
-    terminal::{self, ClearType},
-    Command, Result,
+    event::{self, Event, KeyCode, KeyEvent, KeyEventKind, KeyEventState, KeyModifiers},
+    execute, terminal, Result,
 };
 use snorkel::orca::Orca;
-use std::io::{self, Write};
+use std::io;
 use tui::{style::Color, widgets::Paragraph};
-
-// fn run<W>(w: &mut W) -> Result<()>
-// where
-//     W: Write,
-// {
-//     execute!(w, terminal::EnterAlternateScreen)?;
-//     terminal::enable_raw_mode()?;
-
-//     let mut orca = Orca::new(20, 20);
-
-//     loop {
-//         queue!(
-//             w,
-//             style::ResetColor,
-//             terminal::Clear(ClearType::All),
-//             cursor::Hide,
-//             cursor::MoveTo(1, 1)
-//         )?;
-
-//         for line in orca.render().split('\n') {
-//             queue!(w, style::Print(line), cursor::MoveToNextLine(1))?;
-//         }
-
-//         let char = read_char()?;
-//         queue!(
-//             w,
-//             style::Print(format!("char: {}", char)),
-//             cursor::MoveToNextLine(1)
-//         )?;
-
-//         w.flush()?;
-//     }
-
-//     execute!(
-//         w,
-//         style::ResetColor,
-//         cursor::Show,
-//         terminal::LeaveAlternateScreen
-//     )?;
-
-//     terminal::disable_raw_mode()
-// }
-
-// pub fn read_char() -> Result<char> {
-//     loop {
-//         if let Ok(Event::Key(KeyEvent {
-//             code: KeyCode::Char(c),
-//             ..
-//         })) = event::read()
-//         {
-//             return Ok(c);
-//         }
-//     }
-// }
-
-// pub fn buffer_size() -> Result<(u16, u16)> {
-//     terminal::size()
-// }
 
 fn run_app<B: tui::backend::Backend>(terminal: &mut tui::Terminal<B>) -> io::Result<()> {
     let orca = Orca::new(20, 20);
@@ -73,6 +12,16 @@ fn run_app<B: tui::backend::Backend>(terminal: &mut tui::Terminal<B>) -> io::Res
         terminal.draw(|f| ui(f, &orca))?;
         if let Event::Key(key) = event::read()? {
             if let KeyCode::Char('q') = key.code {
+                return Ok(());
+            }
+            // control-c
+            if let KeyEvent {
+                code: KeyCode::Char('c'),
+                modifiers: KeyModifiers::CONTROL,
+                kind: KeyEventKind::Press,
+                state: KeyEventState::NONE,
+            } = key
+            {
                 return Ok(());
             }
             log::info!("char: {:#?}", key);
