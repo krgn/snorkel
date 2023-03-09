@@ -1,5 +1,7 @@
 //! Module for all internal Orca things.
 
+use std::cmp;
+
 use jumprope::JumpRope;
 
 pub enum Op {
@@ -190,6 +192,110 @@ impl Orca {
 
     pub fn render(&self) -> String {
         self.data.to_string()
+    }
+
+    // ░█▀▀░█▀█░█▀█░█░█
+    // ░█░░░█░█░█▀▀░░█░
+    // ░▀▀▀░▀▀▀░▀░░░░▀░
+
+    pub fn copy_selection(
+        &self,
+        start_x: usize,
+        start_y: usize,
+        end_x: usize,
+        end_y: usize,
+    ) -> Vec<String> {
+        // the length of a line in the current setup
+        let line_len = self.cols + 1;
+        // the total length of the rope
+        let total_chars = line_len * self.rows;
+
+        // sanity check
+        assert_eq!(self.data.len_chars(), total_chars);
+
+        // sanitized rectangle:
+        // we can get to the normalized start point by chosing
+        // the lowest value for both, x and y.
+        let start_x = cmp::min(start_x, end_x);
+        let start_y = cmp::min(start_y, end_y);
+
+        // same procedure, but also constrain the end point
+        // by the rectangle size
+        let end_x = cmp::min(cmp::max(start_x, end_x), self.cols - 1);
+        let end_y = cmp::min(cmp::max(start_y, end_y), self.rows);
+
+        // here we can safely already return nothing, as the grid
+        // is simply not big enough for there to be any data to copy
+        if start_x > self.cols || start_y > self.rows {
+            return vec![];
+        }
+
+        let len_x = 1 + end_x - start_x;
+        let len_y = 1 + end_y - start_y;
+
+        // it makes no sense to proceed any further if the inputs
+        // are zero, so we return early
+        if len_y == 0 || len_x == 0 {
+            return vec![];
+        }
+
+        let mut lines = Vec::with_capacity(len_y);
+
+        println!(
+            r#"
+        self:
+            rope_len: {}
+            rows:     {}
+            cols:     {}
+        args:
+            start_x:  {}
+            start_y:  {}
+            end_x:    {}
+            end_y:    {}
+        locals:
+            len_x:    {}
+            len_y:    {}
+        "#,
+            self.data.len_chars(),
+            self.rows,
+            self.cols,
+            start_x,
+            start_y,
+            end_x,
+            end_y,
+            len_x,
+            len_y,
+        );
+
+        'rows: for row in start_y..len_y + 1 {
+            if row >= self.rows {
+                break 'rows;
+            }
+            let offset = (row * line_len) + start_x;
+            let end = offset + len_x;
+            let mut str = String::with_capacity(len_x);
+            for char in self.data.slice_chars(offset..end) {
+                str.push(char);
+            }
+            println!(
+                "row: {} offset: {} end: {} str: {:#?}",
+                row, offset, end, str
+            );
+            lines.push(str);
+        }
+        return lines;
+    }
+
+    // ░█▀█░█▀█░█▀▀░▀█▀░█▀▀
+    // ░█▀▀░█▀█░▀▀█░░█░░█▀▀
+    // ░▀░░░▀░▀░▀▀▀░░▀░░▀▀▀
+
+    pub fn paste_selection(&mut self, x: usize, y: usize, sel: &Vec<String>) {
+        let mut cnt = 0;
+        for slc in sel {
+            self.paste_slice(x, y + cnt, slc);
+            cnt += 1;
+        }
     }
 
     pub fn paste_slice(&mut self, x: usize, y: usize, glyph: &str) {
@@ -383,5 +489,107 @@ Y⸱⸱⸱X
 ⌎⸱⸱⸱⌏
 "#;
         assert_eq!(expected.trim_start(), rendered)
+    }
+}
+
+// ░█▀▀░█▀█░█▀█░█░█
+// ░█░░░█░█░█▀▀░░█░
+// ░▀▀▀░▀▀▀░▀░░░░▀░
+
+#[cfg(test)]
+mod copy_selection {
+    use crate::orca::Orca;
+
+    #[test]
+    fn copy_selection_of_multiple_lines() {
+        let mut orca = Orca::new(6, 20);
+        orca.paste_slice(2, 2, "X");
+        let rendered = orca.render();
+        let expected = r#"
+⌌⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⌍
+⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱
+⸱⸱X⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱
+⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱
+⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱
+⌎⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⌏
+"#;
+        assert_eq!(expected.trim_start(), rendered);
+
+        let lines = orca.copy_selection(1, 1, 3, 3);
+        assert_eq!(3, lines.len());
+        assert_eq!("⸱⸱⸱", lines[0]);
+        assert_eq!("⸱X⸱", lines[1]);
+        assert_eq!("⸱⸱⸱", lines[2]);
+    }
+
+    #[test]
+    fn copy_paste_selection_should_be_correct() {
+        let mut orca = Orca::new(6, 20);
+        orca.paste_slice(1, 1, "-----");
+        orca.paste_slice(1, 2, "-111-");
+        orca.paste_slice(1, 3, "-222-");
+        orca.paste_slice(1, 4, "-333-");
+        orca.paste_slice(1, 5, "-----");
+        let rendered = orca.render();
+        let expected = r#"
+⌌⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⌍
+⸱-----⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱
+⸱-111-⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱
+⸱-222-⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱
+⸱-333-⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱
+⌎-----⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⌏
+"#;
+        assert_eq!(expected.trim_start(), rendered);
+
+        let lines = orca.copy_selection(1, 1, 5, 6);
+        assert_eq!(5, lines.len());
+        assert_eq!("-----", lines[0]);
+        assert_eq!("-111-", lines[1]);
+        assert_eq!("-222-", lines[2]);
+        assert_eq!("-333-", lines[3]);
+        assert_eq!("-----", lines[4]);
+
+        orca.paste_selection(6, 1, &lines);
+        let rendered = orca.render();
+        let expected = r#"
+⌌⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⌍
+⸱----------⸱⸱⸱⸱⸱⸱⸱⸱⸱
+⸱-111--111-⸱⸱⸱⸱⸱⸱⸱⸱⸱
+⸱-222--222-⸱⸱⸱⸱⸱⸱⸱⸱⸱
+⸱-333--333-⸱⸱⸱⸱⸱⸱⸱⸱⸱
+⌎----------⸱⸱⸱⸱⸱⸱⸱⸱⌏
+"#;
+        assert_eq!(expected.trim_start(), rendered);
+    }
+
+    #[test]
+    fn copy_selection_of_edge_lines() {
+        let mut orca = Orca::new(6, 20);
+        orca.paste_slice(17, 3, "1");
+        orca.paste_slice(18, 3, "1");
+        orca.paste_slice(19, 3, "1");
+        orca.paste_slice(17, 4, "2");
+        orca.paste_slice(18, 4, "2");
+        orca.paste_slice(19, 4, "2");
+        orca.paste_slice(17, 5, "3");
+        orca.paste_slice(18, 5, "3");
+        orca.paste_slice(19, 5, "3");
+        let rendered = orca.render();
+        let expected = r#"
+⌌⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⌍
+⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱
+⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱
+⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱111
+⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱222
+⌎⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱333
+"#;
+        assert_eq!(expected.trim_start(), rendered);
+
+        let lines = orca.copy_selection(16, 2, 22, 6);
+        assert_eq!(4, lines.len());
+        assert_eq!("⸱⸱⸱⸱", lines[0]);
+        assert_eq!("⸱111", lines[1]);
+        assert_eq!("⸱222", lines[2]);
+        assert_eq!("⸱333", lines[3]);
     }
 }

@@ -6,6 +6,10 @@ let
   unstable = import <unstable> {};
   secrets = {};
 
+  python-custom = unstable.python3.withPackages(pkgs: with pkgs; [
+    lldb
+  ]);
+
   mold-custom = pkgs.mold.overrideDerivation(attrs: rec {
     version = "1.10.1";
     name = "mold-${version}";
@@ -17,13 +21,29 @@ let
     };
   });
 
+  debug-tests = pkgs.writeScriptBin "debug-tests" ''
+  #!/usr/bin/env bash
+  exe=$(
+  cargo test --no-run --message-format=json \
+    | jq -r 'select(.profile.test == true) 
+             | select(.target.kind[] | contains("lib")) 
+             | .executable'
+  )
+  reset
+  rust-gdb --eval-command='b rust_panic' $exe
+  '';
+
 in  mkShell (lib.mergeAttrs secrets {
   buildInputs = [ 
     # rust + native deps
-    lldb pkg-config openssl unstable.clang_14
+    lldb_15 gdb pkg-config openssl unstable.clang_14
     portmidi
-    rustup mold-custom
+    rustup mold-custom python-custom
+    debug-tests
   ];
+
+  # RUST_BACKTRACE = "1";
+  # CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_RUNNER = "rust-lldb"; 
 
   shellHook = ''
   export PATH=$PATH:$(dirname $(rustup which rust-analyzer))
