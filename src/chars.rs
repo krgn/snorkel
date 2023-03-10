@@ -2,7 +2,7 @@ pub const TOP_LEFT_CORNER: char = '⌌';
 pub const TOP_RIGHT_CORNER: char = '⌍';
 pub const BOTTOM_LEFT_CORNER: char = '⌎';
 pub const BOTTOM_RIGHT_CORNER: char = '⌏';
-pub const EMPTY_CELL: char = '⸱';
+pub const EMPTY_CELL: char = '·';
 pub const NL: char = '\n';
 
 pub fn init_char(rs: usize, cs: usize, row: usize, col: usize) -> char {

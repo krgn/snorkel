@@ -25,10 +25,11 @@ fn run_app<B: tui::backend::Backend>(terminal: &mut tui::Terminal<B>) -> io::Res
                 }
             }
             state.input(key);
-            log::info!("char: {:#?}", key);
         }
     }
 }
+
+const DARK_GREY: Color = Color::Rgb(90, 90, 90);
 
 fn ui<B: tui::backend::Backend>(f: &mut tui::Frame<B>, state: &state::AppState) {
     let chunks = tui::layout::Layout::default()
@@ -76,7 +77,7 @@ fn ui<B: tui::backend::Backend>(f: &mut tui::Frame<B>, state: &state::AppState) 
             let is_cursor = state.cursor.x == x && state.cursor.y == y;
             match state.snrkl.get(x, y) {
                 Some(char) if is_cursor => {
-                    spn.push(Span::raw(strng));
+                    spn.push(Span::styled(strng, Style::default().fg(DARK_GREY)));
                     spn.push(Span::styled(
                         char.to_string(),
                         Style::default().bg(Color::Yellow).fg(Color::Black),
@@ -85,7 +86,7 @@ fn ui<B: tui::backend::Backend>(f: &mut tui::Frame<B>, state: &state::AppState) 
                 }
                 Some(char) => strng.push(char),
                 None if is_cursor => {
-                    spn.push(Span::raw(strng));
+                    spn.push(Span::styled(strng, Style::default().fg(DARK_GREY)));
                     spn.push(Span::styled(
                         chars::EMPTY_CELL.to_string(),
                         Style::default().bg(Color::Yellow).fg(Color::Black),
@@ -95,7 +96,7 @@ fn ui<B: tui::backend::Backend>(f: &mut tui::Frame<B>, state: &state::AppState) 
                 None => strng.push(chars::EMPTY_CELL),
             }
         }
-        spn.push(Span::raw(strng));
+        spn.push(Span::styled(strng, Style::default().fg(DARK_GREY)));
         text.push(Spans::from(spn))
     }
 
