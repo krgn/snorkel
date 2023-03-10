@@ -1,0 +1,103 @@
+use crate::chars;
+
+#[derive(Clone, Debug, Eq, PartialEq, PartialOrd, Ord)]
+pub enum Op {
+    Add,
+    Bang,
+    Clock,
+    Comment,
+    East,
+    Gen,
+    Hold,
+    If,
+    Inc,
+    Jmp,
+    Konkat,
+    Lerp,
+    Less,
+    Mul,
+    Val(char),
+    North,
+    Push,
+    Query,
+    Rand,
+    Read,
+    South,
+    Sub,
+    Track,
+    Uclid,
+    Var,
+    West,
+    Write,
+    Ymp,
+}
+
+impl From<&Op> for char {
+    fn from(value: &Op) -> Self {
+        match value {
+            Op::Add => 'A',
+            Op::Bang => '*',
+            Op::Clock => 'C',
+            Op::Comment => '#',
+            Op::East => 'E',
+            Op::Gen => 'G',
+            Op::Hold => 'H',
+            Op::If => 'F',
+            Op::Inc => 'I',
+            Op::Jmp => 'J',
+            Op::Konkat => 'K',
+            Op::Lerp => 'Z',
+            Op::Less => 'L',
+            Op::Mul => 'M',
+            Op::Val(c) => *c,
+            Op::North => 'N',
+            Op::Push => 'P',
+            Op::Query => 'Q',
+            Op::Rand => 'R',
+            Op::Read => 'O',
+            Op::South => 'S',
+            Op::Sub => 'B',
+            Op::Track => 'T',
+            Op::Uclid => 'U',
+            Op::Var => 'V',
+            Op::West => 'W',
+            Op::Write => 'X',
+            Op::Ymp => 'Y',
+        }
+    }
+}
+
+impl From<char> for Op {
+    fn from(value: char) -> Self {
+        match value {
+            'A' => Op::Add,
+            '*' => Op::Bang,
+            'C' => Op::Clock,
+            '#' => Op::Comment,
+            'E' => Op::East,
+            'G' => Op::Gen,
+            'H' => Op::Hold,
+            'F' => Op::If,
+            'I' => Op::Inc,
+            'J' => Op::Jmp,
+            'K' => Op::Konkat,
+            'Z' => Op::Lerp,
+            'L' => Op::Less,
+            'M' => Op::Mul,
+            'N' => Op::North,
+            'P' => Op::Push,
+            'Q' => Op::Query,
+            'R' => Op::Rand,
+            'O' => Op::Read,
+            'S' => Op::South,
+            'B' => Op::Sub,
+            'T' => Op::Track,
+            'U' => Op::Uclid,
+            'V' => Op::Var,
+            'W' => Op::West,
+            'X' => Op::Write,
+            'Y' => Op::Ymp,
+            c => Op::Val(c),
+        }
+    }
+}

@@ -7,8 +7,11 @@
 // TODO: turn this back on
 // #![warn(missing_docs)]
 
+pub mod chars;
+pub mod op;
 pub mod orca;
 pub mod simple_loop;
+pub mod snrkl;
 pub mod timerfd;
 
 pub struct Event;

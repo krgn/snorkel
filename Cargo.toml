@@ -8,6 +8,18 @@ edition = "2021"
 name = "snorkel"
 path = "bin/snorkel.rs"
 
+[[bench]]
+name = "flat_vec_lookup"
+harness = false
+
+[[bench]]
+name = "map_lookup"
+harness = false
+
+[[bench]]
+name = "2d_vec_lookup"
+harness = false
+
 [dependencies]
 crossterm = "0.26.1"
 jumprope = "1.1.1"
@@ -21,3 +33,5 @@ timerfd = "1.4.0"
 tui = "0.19.0"
 tui-logger = "0.8.3"
 log = "0.4.17"
+rand = "0.8.5"
+criterion = "0.4.0"

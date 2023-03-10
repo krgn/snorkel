@@ -1,163 +1,45 @@
 //! Module for all internal Orca things.
 
-use std::cmp;
-
+use crate::chars;
 use jumprope::JumpRope;
-
-pub enum Op {
-    Add,
-    Bang,
-    Clock,
-    Comment,
-    East,
-    Gen,
-    Hold,
-    If,
-    Inc,
-    Jmp,
-    Konkat,
-    Lerp,
-    Less,
-    Mul,
-    NoOp,
-    North,
-    Push,
-    Query,
-    Rand,
-    Read,
-    South,
-    Sub,
-    Track,
-    Uclid,
-    Var,
-    West,
-    Write,
-    Ymp,
-}
-
-impl From<Op> for char {
-    fn from(value: Op) -> Self {
-        match value {
-            Op::Add => 'A',
-            Op::Bang => '*',
-            Op::Clock => 'C',
-            Op::Comment => '#',
-            Op::East => 'E',
-            Op::Gen => 'G',
-            Op::Hold => 'H',
-            Op::If => 'F',
-            Op::Inc => 'I',
-            Op::Jmp => 'J',
-            Op::Konkat => 'K',
-            Op::Lerp => 'Z',
-            Op::Less => 'L',
-            Op::Mul => 'M',
-            Op::NoOp => EMPTY_CELL,
-            Op::North => 'N',
-            Op::Push => 'P',
-            Op::Query => 'Q',
-            Op::Rand => 'R',
-            Op::Read => 'O',
-            Op::South => 'S',
-            Op::Sub => 'B',
-            Op::Track => 'T',
-            Op::Uclid => 'U',
-            Op::Var => 'V',
-            Op::West => 'W',
-            Op::Write => 'X',
-            Op::Ymp => 'Y',
-        }
-    }
-}
-
-impl From<char> for Op {
-    fn from(value: char) -> Self {
-        match value {
-            'A' => Op::Add,
-            '*' => Op::Bang,
-            'C' => Op::Clock,
-            '#' => Op::Comment,
-            'E' => Op::East,
-            'G' => Op::Gen,
-            'H' => Op::Hold,
-            'F' => Op::If,
-            'I' => Op::Inc,
-            'J' => Op::Jmp,
-            'K' => Op::Konkat,
-            'Z' => Op::Lerp,
-            'L' => Op::Less,
-            'M' => Op::Mul,
-            'N' => Op::North,
-            'P' => Op::Push,
-            'Q' => Op::Query,
-            'R' => Op::Rand,
-            'O' => Op::Read,
-            'S' => Op::South,
-            'B' => Op::Sub,
-            'T' => Op::Track,
-            'U' => Op::Uclid,
-            'V' => Op::Var,
-            'W' => Op::West,
-            'X' => Op::Write,
-            'Y' => Op::Ymp,
-            _ => Op::NoOp,
-        }
-    }
-}
+use std::cmp;
 
 /// Orca is the central data structure to track the state of
 /// snorkel application.
-pub struct Orca {
+pub struct Snrkl {
     pub cols: usize,
     pub data: JumpRope,
     pub rows: usize,
-}
-
-const TOP_LEFT_CORNER: char = '⌌';
-const TOP_RIGHT_CORNER: char = '⌍';
-const BOTTOM_LEFT_CORNER: char = '⌎';
-const BOTTOM_RIGHT_CORNER: char = '⌏';
-const EMPTY_CELL: char = '⸱';
-const NL: char = '\n';
-
-fn init_char(rs: usize, cs: usize, row: usize, col: usize) -> char {
-    match (row, col) {
-        (r, c) if c == 0 && r == 0 => TOP_LEFT_CORNER,
-        (r, c) if c == 0 && r == rs - 1 => BOTTOM_LEFT_CORNER,
-        (r, c) if c == cs - 1 && r == 0 => TOP_RIGHT_CORNER,
-        (r, c) if c == cs - 1 && r == rs - 1 => BOTTOM_RIGHT_CORNER,
-        _ => EMPTY_CELL,
-    }
 }
 
 fn init_rope(rows: usize, cols: usize) -> JumpRope {
     let mut str = String::with_capacity(rows * (cols + 1));
     for row in 0..rows {
         for col in 0..cols {
-            let char = init_char(rows, cols, row, col);
+            let char = chars::init_char(rows, cols, row, col);
             str.push(char);
         }
-        str.push(NL);
+        str.push(chars::NL);
     }
     JumpRope::from(str)
 }
 
 fn is_whitespace(c: char) -> bool {
     match c {
-        c if c == TOP_LEFT_CORNER => true,
-        c if c == TOP_RIGHT_CORNER => true,
-        c if c == BOTTOM_LEFT_CORNER => true,
-        c if c == BOTTOM_RIGHT_CORNER => true,
-        c if c == EMPTY_CELL => true,
-        c if c == NL => true,
+        c if c == chars::TOP_LEFT_CORNER => true,
+        c if c == chars::TOP_RIGHT_CORNER => true,
+        c if c == chars::BOTTOM_LEFT_CORNER => true,
+        c if c == chars::BOTTOM_RIGHT_CORNER => true,
+        c if c == chars::EMPTY_CELL => true,
+        c if c == chars::NL => true,
         _ => false,
     }
 }
 
-impl Orca {
-    pub fn new(rows: usize, cols: usize) -> Orca {
+impl Snrkl {
+    pub fn new(rows: usize, cols: usize) -> Snrkl {
         let data = init_rope(rows, cols);
-        Orca { rows, cols, data }
+        Snrkl { rows, cols, data }
     }
 
     // ░█▀▄░█▀▀░█▀▀░▀█▀░▀▀█░█▀▀
@@ -307,11 +189,11 @@ impl Orca {
 
 #[cfg(test)]
 mod tests {
-    use super::Orca;
+    use super::Snrkl;
 
     #[test]
     fn create_new_orca_renders_correctly() {
-        let orca = Orca::new(4, 20);
+        let orca = Snrkl::new(4, 20);
         let rendered = orca.render();
         let expected = r#"
 ⌌⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⌍
@@ -324,7 +206,7 @@ mod tests {
 
     #[test]
     fn paste_slice_renders_correctly() {
-        let mut orca = Orca::new(4, 20);
+        let mut orca = Snrkl::new(4, 20);
         orca.paste_slice(5, 2, "D");
         orca.paste_slice(13, 1, "X");
         let rendered = orca.render();
@@ -339,7 +221,7 @@ mod tests {
 
     #[test]
     fn resize_bigger_renders_correctly() {
-        let mut orca = Orca::new(4, 5);
+        let mut orca = Snrkl::new(4, 5);
         orca.paste_slice(3, 2, "D");
         orca.paste_slice(4, 3, "A");
         let rendered = orca.render();
@@ -366,7 +248,7 @@ mod tests {
 
     #[test]
     fn paste_slice_should_ignore_oob() {
-        let mut orca = Orca::new(5, 5);
+        let mut orca = Snrkl::new(5, 5);
         orca.paste_slice(6, 2, "X");
         orca.paste_slice(2, 6, "Y");
         let rendered = orca.render();
@@ -382,7 +264,7 @@ mod tests {
 
     #[test]
     fn paste_slice_should_set_last() {
-        let mut orca = Orca::new(5, 5);
+        let mut orca = Snrkl::new(5, 5);
         orca.paste_slice(4, 4, "X");
         orca.paste_slice(0, 4, "Y");
         let rendered = orca.render();
@@ -398,7 +280,7 @@ Y⸱⸱⸱X
 
     #[test]
     fn paste_slice_should_ignore_empty_str() {
-        let mut orca = Orca::new(5, 5);
+        let mut orca = Snrkl::new(5, 5);
         orca.paste_slice(0, 4, "");
         let rendered = orca.render();
         let expected = r#"
@@ -413,7 +295,7 @@ Y⸱⸱⸱X
 
     #[test]
     fn paste_slice_should_set_all_chars() {
-        let mut orca = Orca::new(5, 5);
+        let mut orca = Snrkl::new(5, 5);
         orca.paste_slice(1, 1, "foo");
         let rendered = orca.render();
         let expected = r#"
@@ -428,7 +310,7 @@ Y⸱⸱⸱X
 
     #[test]
     fn paste_slice_should_set_truncate_excess_chars() {
-        let mut orca = Orca::new(5, 5);
+        let mut orca = Snrkl::new(5, 5);
         orca.paste_slice(1, 1, "foobar");
         let rendered = orca.render();
         let expected = r#"
@@ -443,7 +325,7 @@ Y⸱⸱⸱X
 
     #[test]
     fn resize_smaller_renders_correctly() {
-        let mut orca = Orca::new(6, 20);
+        let mut orca = Snrkl::new(6, 20);
         orca.paste_slice(2, 2, "X");
         orca.paste_slice(17, 4, "F");
         let rendered = orca.render();
@@ -476,11 +358,11 @@ Y⸱⸱⸱X
 
 #[cfg(test)]
 mod copy_selection {
-    use crate::orca::Orca;
+    use crate::orca::Snrkl;
 
     #[test]
     fn copy_selection_of_multiple_lines() {
-        let mut orca = Orca::new(6, 20);
+        let mut orca = Snrkl::new(6, 20);
         orca.paste_slice(2, 2, "X");
         let rendered = orca.render();
         let expected = r#"
@@ -502,7 +384,7 @@ mod copy_selection {
 
     #[test]
     fn copy_paste_selection_should_be_correct() {
-        let mut orca = Orca::new(6, 20);
+        let mut orca = Snrkl::new(6, 20);
         orca.paste_slice(1, 1, "-----");
         orca.paste_slice(1, 2, "-111-");
         orca.paste_slice(1, 3, "-222-");
@@ -542,7 +424,7 @@ mod copy_selection {
 
     #[test]
     fn copy_selection_of_edge_lines() {
-        let mut orca = Orca::new(6, 20);
+        let mut orca = Snrkl::new(6, 20);
         orca.paste_slice(17, 3, "1");
         orca.paste_slice(18, 3, "1");
         orca.paste_slice(19, 3, "1");
