@@ -1,6 +1,5 @@
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
 use rand::Rng;
-use std::collections::HashMap;
 
 const ROWS: usize = 10;
 const COLS: usize = 20;
@@ -25,32 +24,6 @@ struct FlatVecItem {
     val: usize,
 }
 
-fn gen_flat_vec() -> Vec<FlatVecItem> {
-    let mut rng = rand::thread_rng();
-    let mut v = Vec::with_capacity(ROWS * COLS);
-    for row in 0..ROWS {
-        for col in 0..COLS {
-            v.push(FlatVecItem {
-                x: col,
-                y: row,
-                val: rng.gen_range(0..100),
-            })
-        }
-    }
-    return v;
-}
-
-fn gen_map() -> HashMap<(usize, usize), usize> {
-    let mut rng = rand::thread_rng();
-    let mut map = HashMap::with_capacity(ROWS * COLS);
-    for row in 0..ROWS {
-        for col in 0..COLS {
-            map.insert((row, col), rng.gen_range(0..100));
-        }
-    }
-    map
-}
-
 fn gen_2dvec() -> Vec<Vec<usize>> {
     let mut rng = rand::thread_rng();
     let mut rows = Vec::with_capacity(ROWS);
@@ -64,36 +37,10 @@ fn gen_2dvec() -> Vec<Vec<usize>> {
     rows
 }
 
-fn bench_flat_vec_lookup(data: &Vec<FlatVecItem>) {
-    for (x, y) in COORDS {
-        let _ = data.iter().find(|item| item.x == x && item.y == y).unwrap();
-    }
-}
-
-fn bench_map_lookup(data: &HashMap<(usize, usize), usize>) {
-    for (x, y) in COORDS {
-        let _ = data.get(&(x, y)).unwrap();
-    }
-}
-
 fn bench_2dvec_lookup(data: &Vec<Vec<usize>>) {
     for (x, y) in COORDS {
         let _ = data[y][x];
     }
-}
-
-fn flat_vec_benchmark(c: &mut Criterion) {
-    let flat_vec = gen_flat_vec();
-    c.bench_function("flat vec lookup", |b| {
-        b.iter(|| bench_flat_vec_lookup(black_box(&flat_vec)))
-    });
-}
-
-fn map_benchmark(c: &mut Criterion) {
-    let map = gen_map();
-    c.bench_function("map lookup", |b| {
-        b.iter(|| bench_map_lookup(black_box(&map)))
-    });
 }
 
 fn two_d_benchmark(c: &mut Criterion) {

@@ -1,265 +1,21 @@
 use crossterm::{
-    event::{self, Event, KeyCode, KeyEvent, KeyEventKind, KeyEventState, KeyModifiers},
+    event::{self, Event},
     execute, terminal, Result,
 };
-use snorkel::{chars, snrkl::Snrkl};
-use std::{cmp, io};
+use snorkel::{
+    chars,
+    mode::{NormalKeymap, NormalModeCommand},
+    state::{self, EditorState},
+};
+use std::io;
 use tui::{
     style::{Color, Style},
     text::{Span, Spans},
     widgets::{Block, Borders, Paragraph},
 };
 
-struct NormalKeymap;
-
-impl NormalKeymap {
-    fn edit_state(ev: KeyEvent) -> Option<NormalModeCommand> {
-        if let KeyEvent {
-            code: KeyCode::Char(chr),
-            modifiers: KeyModifiers::NONE,
-            kind: KeyEventKind::Press,
-            state: KeyEventState::NONE,
-        } = ev
-        {
-            match chr {
-                'i' => Some(NormalModeCommand::EnterInsertMode),
-                'r' => Some(NormalModeCommand::EnterReplaceMode),
-                'v' => Some(NormalModeCommand::EnterSelectMode),
-                _ => None,
-            }
-        } else {
-            None
-        }
-    }
-
-    fn movement(ev: KeyEvent) -> Option<NormalModeCommand> {
-        if let KeyEvent {
-            code: KeyCode::Char(chr),
-            modifiers: KeyModifiers::NONE,
-            kind: KeyEventKind::Press,
-            state: KeyEventState::NONE,
-        } = ev
-        {
-            match chr {
-                'h' => Some(NormalModeCommand::MoveLeft),
-                'l' => Some(NormalModeCommand::MoveRight),
-                'j' => Some(NormalModeCommand::MoveDown),
-                'k' => Some(NormalModeCommand::MoveUp),
-                _ => None,
-            }
-        } else {
-            None
-        }
-    }
-
-    fn exit(ev: KeyEvent) -> Option<NormalModeCommand> {
-        if ev.kind != KeyEventKind::Press {
-            return None;
-        }
-
-        let code = ev.code;
-        let modi = ev.modifiers;
-
-        match (code, modi) {
-            (KeyCode::Char('c'), KeyModifiers::CONTROL)
-            | (KeyCode::Char('q'), KeyModifiers::NONE) => Some(NormalModeCommand::Exit),
-            _ => None,
-        }
-    }
-
-    fn parse_key(ev: KeyEvent) -> Option<NormalModeCommand> {
-        NormalKeymap::edit_state(ev)
-            .or_else(|| NormalKeymap::movement(ev))
-            .or_else(|| NormalKeymap::exit(ev))
-    }
-}
-
-#[derive(Default)]
-pub struct Coord {
-    pub x: usize,
-    pub y: usize,
-}
-
-struct InsertKeymap;
-
-impl InsertKeymap {
-    fn parse_key(ev: KeyEvent) -> Option<InsertModeCommand> {
-        if ev.kind != KeyEventKind::Press {
-            return None;
-        }
-
-        let code = ev.code;
-        let modi = ev.modifiers;
-
-        match (code, modi) {
-            (KeyCode::Char('['), KeyModifiers::CONTROL) | (KeyCode::Esc, KeyModifiers::NONE) => {
-                Some(InsertModeCommand::Exit)
-            }
-            _ => None,
-        }
-    }
-}
-
-#[derive(Debug)]
-pub enum InsertModeCommand {
-    Exit,
-}
-
-struct SelectKeymap;
-
-impl SelectKeymap {
-    fn parse_key(ev: KeyEvent) -> Option<SelectModeCommand> {
-        if ev.kind != KeyEventKind::Press {
-            return None;
-        }
-
-        let code = ev.code;
-        let modi = ev.modifiers;
-
-        match (code, modi) {
-            (KeyCode::Char('['), KeyModifiers::CONTROL) | (KeyCode::Esc, KeyModifiers::NONE) => {
-                Some(SelectModeCommand::Exit)
-            }
-            _ => None,
-        }
-    }
-}
-
-#[derive(Debug)]
-pub enum SelectModeCommand {
-    Exit,
-}
-
-struct ReplaceKeymap;
-
-impl ReplaceKeymap {
-    fn parse_key(ev: KeyEvent) -> Option<ReplaceModeCommand> {
-        if ev.kind != KeyEventKind::Press {
-            return None;
-        }
-
-        let code = ev.code;
-        let modi = ev.modifiers;
-
-        match (code, modi) {
-            (KeyCode::Char('['), KeyModifiers::CONTROL) | (KeyCode::Esc, KeyModifiers::NONE) => {
-                Some(ReplaceModeCommand::Exit)
-            }
-            _ => None,
-        }
-    }
-}
-
-#[derive(Debug)]
-pub enum ReplaceModeCommand {
-    Exit,
-}
-
-#[derive(Debug)]
-pub enum NormalModeCommand {
-    Exit,
-    MoveUp,
-    MoveDown,
-    MoveLeft,
-    MoveRight,
-    EnterInsertMode,
-    EnterReplaceMode,
-    EnterSelectMode,
-}
-
-#[derive(Default, Debug, Eq, PartialEq, PartialOrd, Ord)]
-enum EditorState {
-    Insert,
-    #[default]
-    Normal,
-    Replace,
-    Select,
-}
-
-struct AppState {
-    snrkl: Snrkl,
-    cursor: Coord,
-    edit_state: EditorState,
-}
-
-impl AppState {
-    pub fn new(rows: usize, cols: usize) -> AppState {
-        AppState {
-            snrkl: Snrkl::new(rows, cols),
-            cursor: Coord::default(),
-            edit_state: EditorState::default(),
-        }
-    }
-
-    pub fn input(&mut self, key: KeyEvent) {
-        match &self.edit_state {
-            EditorState::Normal => {
-                use NormalModeCommand::*;
-                if let Some(cmd) = NormalKeymap::parse_key(key) {
-                    match cmd {
-                        EnterInsertMode => self.edit_state = EditorState::Insert,
-                        EnterReplaceMode => self.edit_state = EditorState::Replace,
-                        EnterSelectMode => self.edit_state = EditorState::Select,
-                        MoveUp => self.move_cursor(cmd),
-                        MoveDown => self.move_cursor(cmd),
-                        MoveLeft => self.move_cursor(cmd),
-                        MoveRight => self.move_cursor(cmd),
-                        Exit => (),
-                    }
-                }
-            }
-            EditorState::Insert => {
-                use InsertModeCommand::*;
-                if let Some(cmd) = InsertKeymap::parse_key(key) {
-                    match cmd {
-                        Exit => self.edit_state = EditorState::default(),
-                    }
-                }
-            }
-            EditorState::Replace => {
-                use ReplaceModeCommand::*;
-                if let Some(cmd) = ReplaceKeymap::parse_key(key) {
-                    match cmd {
-                        Exit => self.edit_state = EditorState::default(),
-                    }
-                }
-            }
-            EditorState::Select => {
-                use SelectModeCommand::*;
-                if let Some(cmd) = SelectKeymap::parse_key(key) {
-                    match cmd {
-                        Exit => self.edit_state = EditorState::default(),
-                    }
-                }
-            }
-        }
-    }
-
-    pub fn move_cursor(&mut self, cmd: NormalModeCommand) {
-        if self.edit_state != EditorState::Normal {
-            return;
-        }
-
-        use NormalModeCommand::*;
-
-        let x = self.cursor.x;
-        let y = self.cursor.y;
-
-        let (new_x, new_y) = match cmd {
-            MoveDown => (x, cmp::min(y + 1, self.snrkl.rows)),
-            MoveUp => (x, y.checked_sub(1).unwrap_or(0)),
-            MoveLeft => (x.checked_sub(1).unwrap_or(0), y),
-            MoveRight => (cmp::min(x + 1, self.snrkl.rows), y),
-            _ => (x, y),
-        };
-
-        self.cursor.x = new_x;
-        self.cursor.y = new_y;
-    }
-}
-
 fn run_app<B: tui::backend::Backend>(terminal: &mut tui::Terminal<B>) -> io::Result<()> {
-    let mut state = AppState::new(20, 80);
+    let mut state = state::AppState::new(20, 80);
     loop {
         terminal.draw(|f| ui(f, &state))?;
         if let Event::Key(key) = event::read()? {
@@ -275,7 +31,7 @@ fn run_app<B: tui::backend::Backend>(terminal: &mut tui::Terminal<B>) -> io::Res
     }
 }
 
-fn ui<B: tui::backend::Backend>(f: &mut tui::Frame<B>, state: &AppState) {
+fn ui<B: tui::backend::Backend>(f: &mut tui::Frame<B>, state: &state::AppState) {
     let chunks = tui::layout::Layout::default()
         .direction(tui::layout::Direction::Vertical)
         .constraints(
@@ -416,7 +172,7 @@ fn main() -> Result<()> {
 
 #[cfg(test)]
 mod move_cursor {
-    use crate::{AppState, NormalModeCommand};
+    use crate::{state::AppState, NormalModeCommand};
 
     #[test]
     fn move_cursor_around() {

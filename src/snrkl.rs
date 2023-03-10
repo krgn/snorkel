@@ -1,6 +1,3 @@
-use crate::chars;
-use crate::op::Op;
-
 pub struct Snrkl {
     pub rows: usize,
     pub cols: usize,
@@ -46,6 +43,7 @@ impl Snrkl {
 
     #[cfg(test)]
     pub fn render(&self) -> String {
+        use crate::chars;
         let mut out = String::with_capacity(self.rows * self.cols + self.rows);
         for row in 0..self.rows {
             for col in 0..self.cols {

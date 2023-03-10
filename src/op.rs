@@ -1,5 +1,3 @@
-use crate::chars;
-
 #[derive(Clone, Debug, Eq, PartialEq, PartialOrd, Ord)]
 pub enum Op {
     Add,
