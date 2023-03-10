@@ -68,6 +68,10 @@ impl AppState {
                 if let Some(cmd) = ReplaceKeymap::parse_key(key) {
                     match cmd {
                         Exit => self.edit_state = EditorState::default(),
+                        Op(op) => {
+                            self.snrkl.set_cell(self.cursor.x, self.cursor.y, op);
+                            self.move_cursor(NormalModeCommand::MoveRight(1));
+                        }
                     }
                 }
             }
@@ -83,10 +87,6 @@ impl AppState {
     }
 
     pub fn move_cursor(&mut self, cmd: NormalModeCommand) {
-        if self.edit_state != EditorState::Normal {
-            return;
-        }
-
         use NormalModeCommand::*;
 
         let x = self.cursor.x;

@@ -73,6 +73,7 @@ fn ui<B: tui::backend::Backend>(f: &mut tui::Frame<B>, state: &state::AppState) 
     let bg_text_style = Style::default().fg(DARK_GREY);
     let comment_style = Style::default().fg(Color::Black).bg(Color::DarkGray);
     let command_style = Style::default().fg(Color::Black).bg(Color::Cyan);
+    let val_style = Style::default().fg(Color::White);
 
     for y in 0..state.snrkl.rows {
         let mut spn = vec![];
@@ -147,11 +148,14 @@ fn ui<B: tui::backend::Backend>(f: &mut tui::Frame<B>, state: &state::AppState) 
                 }
                 Some(ref op) => {
                     let chr: char = op.into();
-                    spn.push(Span::styled(strng, bg_text_style));
-                    spn.push(Span::styled(
-                        chr.to_string(),
-                        Style::default().fg(Color::White),
-                    ));
+                    let prev_style = if in_comment {
+                        comment_style
+                    } else {
+                        bg_text_style
+                    };
+                    let cur_style = if in_comment { comment_style } else { val_style };
+                    spn.push(Span::styled(strng, prev_style));
+                    spn.push(Span::styled(chr.to_string(), cur_style));
                     strng = String::new();
                 }
                 None if is_cursor => {

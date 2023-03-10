@@ -43,6 +43,7 @@ impl Snrkl {
         self.rows = y;
     }
 
+    // Only used in tests.
     #[cfg(test)]
     pub fn render(&self) -> String {
         use crate::chars;
