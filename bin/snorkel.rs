@@ -70,32 +70,97 @@ fn ui<B: tui::backend::Backend>(f: &mut tui::Frame<B>, state: &state::AppState) 
 
     let mut text = vec![];
 
-    let bg_text = Style::default().fg(DARK_GREY);
+    let bg_text_style = Style::default().fg(DARK_GREY);
+    let comment_style = Style::default().fg(Color::Black).bg(Color::DarkGray);
+    let command_style = Style::default().fg(Color::Black).bg(Color::Cyan);
 
     for y in 0..state.snrkl.rows {
         let mut spn = vec![];
         let mut strng = String::new();
+        let mut in_comment = false;
         for x in 0..state.snrkl.cols {
             let is_cursor = state.cursor.x == x && state.cursor.y == y;
             match state.snrkl.get(x, y) {
-                Some(char) if is_cursor => {
-                    spn.push(Span::styled(strng, bg_text));
+                Some(ref op) if is_cursor && !op.is_comment() => {
+                    let chr: char = op.into();
+                    let style = if in_comment {
+                        comment_style
+                    } else {
+                        bg_text_style
+                    };
+                    spn.push(Span::styled(strng, style));
                     spn.push(Span::styled(
-                        char.to_string(),
+                        chr.to_string(),
                         Style::default().bg(Color::Yellow).fg(Color::Black),
                     ));
                     strng = String::new();
                 }
-                Some(char) => {
-                    spn.push(Span::styled(strng, bg_text));
+                Some(ref op) if is_cursor && op.is_comment() && !in_comment => {
+                    let chr: char = op.into();
+                    spn.push(Span::styled(strng, bg_text_style));
                     spn.push(Span::styled(
-                        char.to_string(),
+                        chr.to_string(),
+                        Style::default().bg(Color::Yellow).fg(Color::Black),
+                    ));
+                    in_comment = true;
+                    strng = String::new();
+                }
+                Some(ref op) if is_cursor && op.is_comment() && in_comment => {
+                    let chr: char = op.into();
+                    spn.push(Span::styled(strng, comment_style));
+                    spn.push(Span::styled(
+                        chr.to_string(),
+                        Style::default().bg(Color::Yellow).fg(Color::Black),
+                    ));
+                    in_comment = false;
+                    strng = String::new();
+                }
+                Some(ref op) if op.is_primop() => {
+                    let chr: char = op.into();
+                    let prev_style = if in_comment {
+                        comment_style
+                    } else {
+                        bg_text_style
+                    };
+                    let cur_style = if in_comment {
+                        comment_style
+                    } else {
+                        command_style
+                    };
+                    spn.push(Span::styled(strng, prev_style));
+                    spn.push(Span::styled(chr.to_string(), cur_style));
+                    strng = String::new();
+                }
+                Some(ref op) if op.is_comment() && !in_comment => {
+                    let chr: char = op.into();
+                    spn.push(Span::styled(strng, bg_text_style));
+                    spn.push(Span::styled(chr.to_string(), comment_style));
+                    in_comment = true;
+                    strng = String::new();
+                }
+                Some(ref op) if op.is_comment() && in_comment => {
+                    let chr: char = op.into();
+                    spn.push(Span::styled(strng, comment_style));
+                    spn.push(Span::styled(chr.to_string(), comment_style));
+                    in_comment = false;
+                    strng = String::new();
+                }
+                Some(ref op) => {
+                    let chr: char = op.into();
+                    spn.push(Span::styled(strng, bg_text_style));
+                    spn.push(Span::styled(
+                        chr.to_string(),
                         Style::default().fg(Color::White),
                     ));
                     strng = String::new();
                 }
                 None if is_cursor => {
-                    spn.push(Span::styled(strng, bg_text));
+                    let style = if in_comment {
+                        comment_style
+                    } else {
+                        bg_text_style
+                    };
+                    spn.push(Span::styled(strng, style));
                     spn.push(Span::styled(
                         chars::EMPTY_CELL.to_string(),
                         Style::default().bg(Color::Yellow).fg(Color::Black),
@@ -105,7 +170,11 @@ fn ui<B: tui::backend::Backend>(f: &mut tui::Frame<B>, state: &state::AppState) 
                 None => strng.push(chars::EMPTY_CELL),
             }
         }
-        spn.push(Span::styled(strng, Style::default().fg(DARK_GREY)));
+        if in_comment {
+            spn.push(Span::styled(strng, comment_style));
+        } else {
+            spn.push(Span::styled(strng, bg_text_style));
+        }
         text.push(Spans::from(spn))
     }
 

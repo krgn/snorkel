@@ -1,4 +1,4 @@
-#[derive(Clone, Debug, Eq, PartialEq, PartialOrd, Ord)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq, PartialOrd, Ord)]
 pub enum Op {
     Add,
     Bang,
@@ -28,6 +28,74 @@ pub enum Op {
     West,
     Write,
     Ymp,
+}
+
+impl Op {
+    pub fn from(value: char) -> Option<Op> {
+        match value {
+            'A' => Some(Op::Add),
+            'B' => Some(Op::Sub),
+            'C' => Some(Op::Clock),
+            'E' => Some(Op::East),
+            'F' => Some(Op::If),
+            'G' => Some(Op::Gen),
+            'H' => Some(Op::Hold),
+            'I' => Some(Op::Inc),
+            'J' => Some(Op::Jmp),
+            'K' => Some(Op::Konkat),
+            'L' => Some(Op::Less),
+            'M' => Some(Op::Mul),
+            'N' => Some(Op::North),
+            'O' => Some(Op::Read),
+            'P' => Some(Op::Push),
+            'Q' => Some(Op::Query),
+            'R' => Some(Op::Rand),
+            'S' => Some(Op::South),
+            'T' => Some(Op::Track),
+            'U' => Some(Op::Uclid),
+            'V' => Some(Op::Var),
+            'W' => Some(Op::West),
+            'X' => Some(Op::Write),
+            'Y' => Some(Op::Ymp),
+            'Z' => Some(Op::Lerp),
+
+            '*' => Some(Op::Bang),
+            '#' => Some(Op::Comment),
+
+            // TODO: I'm lazy, but this should work for now
+            c if c.is_alphanumeric() => Some(Op::Val(c)),
+
+            _ => None,
+        }
+    }
+
+    pub fn is_primop(&self) -> bool {
+        match self {
+            Op::Bang | Op::Comment | Op::Val(_) => false,
+            _ => true,
+        }
+    }
+
+    pub fn is_comment(&self) -> bool {
+        match self {
+            Op::Comment => true,
+            _ => false,
+        }
+    }
+
+    pub fn is_value(&self) -> bool {
+        match self {
+            Op::Val(_) => true,
+            _ => false,
+        }
+    }
+}
+
+impl From<&Op> for String {
+    fn from(value: &Op) -> Self {
+        let c: char = value.into();
+        c.to_string()
+    }
 }
 
 impl From<&Op> for char {
@@ -61,41 +129,6 @@ impl From<&Op> for char {
             Op::West => 'W',
             Op::Write => 'X',
             Op::Ymp => 'Y',
-        }
-    }
-}
-
-impl From<char> for Op {
-    fn from(value: char) -> Self {
-        match value {
-            'A' => Op::Add,
-            '*' => Op::Bang,
-            'C' => Op::Clock,
-            '#' => Op::Comment,
-            'E' => Op::East,
-            'G' => Op::Gen,
-            'H' => Op::Hold,
-            'F' => Op::If,
-            'I' => Op::Inc,
-            'J' => Op::Jmp,
-            'K' => Op::Konkat,
-            'Z' => Op::Lerp,
-            'L' => Op::Less,
-            'M' => Op::Mul,
-            'N' => Op::North,
-            'P' => Op::Push,
-            'Q' => Op::Query,
-            'R' => Op::Rand,
-            'O' => Op::Read,
-            'S' => Op::South,
-            'B' => Op::Sub,
-            'T' => Op::Track,
-            'U' => Op::Uclid,
-            'V' => Op::Var,
-            'W' => Op::West,
-            'X' => Op::Write,
-            'Y' => Op::Ymp,
-            c => Op::Val(c),
         }
     }
 }

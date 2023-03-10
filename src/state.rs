@@ -59,7 +59,7 @@ impl AppState {
                 if let Some(cmd) = InsertKeymap::parse_key(key) {
                     match cmd {
                         Exit => self.edit_state = EditorState::default(),
-                        Val(char) => self.snrkl.set_cell(self.cursor.x, self.cursor.y, char),
+                        Op(op) => self.snrkl.set_cell(self.cursor.x, self.cursor.y, op),
                     }
                 }
             }

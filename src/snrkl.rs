@@ -1,7 +1,9 @@
+use crate::op::Op;
+
 pub struct Snrkl {
     pub rows: usize,
     pub cols: usize,
-    data: Vec<Vec<Option<char>>>,
+    data: Vec<Vec<Option<Op>>>,
 }
 
 impl Snrkl {
@@ -14,7 +16,7 @@ impl Snrkl {
         Snrkl { rows, cols, data }
     }
 
-    pub fn get(&self, x: usize, y: usize) -> Option<char> {
+    pub fn get(&self, x: usize, y: usize) -> Option<Op> {
         self.data[y][x]
     }
 
@@ -48,7 +50,7 @@ impl Snrkl {
         for row in 0..self.rows {
             for col in 0..self.cols {
                 if let Some(op) = &self.data[row][col] {
-                    out.push(*op);
+                    out.push(op.into());
                 } else {
                     out.push(chars::EMPTY_CELL);
                 }
@@ -58,7 +60,7 @@ impl Snrkl {
         out
     }
 
-    pub fn set_cell(&mut self, x: usize, y: usize, op: char) {
+    pub fn set_cell(&mut self, x: usize, y: usize, op: Op) {
         if y >= self.rows || x >= self.cols {
             return;
         }
@@ -75,6 +77,8 @@ impl Snrkl {
 
 #[cfg(test)]
 mod tests {
+    use crate::op::Op;
+
     use super::Snrkl;
 
     #[test]
@@ -102,15 +106,15 @@ mod tests {
 "#;
         assert_eq!(expected.trim_start(), rendered);
 
-        snrkl.set_cell(1, 1, 'D');
-        snrkl.set_cell(19, 3, 'F');
+        snrkl.set_cell(1, 1, Op::Add);
+        snrkl.set_cell(19, 3, Op::Clock);
 
         let rendered = snrkl.render();
         let expected = r#"
 ⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱
-⸱D⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱
+⸱A⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱
 ⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱
-⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱F
+⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱C
 "#;
         assert_eq!(expected.trim_start(), rendered);
     }
@@ -118,13 +122,13 @@ mod tests {
     #[test]
     fn resize_should_work() {
         let mut snrkl = Snrkl::new(4, 4);
-        snrkl.set_cell(1, 1, 'D');
-        snrkl.set_cell(2, 2, 'F');
+        snrkl.set_cell(1, 1, Op::Add);
+        snrkl.set_cell(2, 2, Op::Clock);
         let rendered = snrkl.render();
         let expected = r#"
 ⸱⸱⸱⸱
-⸱D⸱⸱
-⸱⸱F⸱
+⸱A⸱⸱
+⸱⸱C⸱
 ⸱⸱⸱⸱
 "#;
         assert_eq!(expected.trim_start(), rendered);
@@ -133,8 +137,8 @@ mod tests {
         let rendered = snrkl.render();
         let expected = r#"
 ⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱
-⸱D⸱⸱⸱⸱⸱⸱⸱⸱
-⸱⸱F⸱⸱⸱⸱⸱⸱⸱
+⸱A⸱⸱⸱⸱⸱⸱⸱⸱
+⸱⸱C⸱⸱⸱⸱⸱⸱⸱
 ⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱
 ⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱
 ⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱
@@ -146,12 +150,12 @@ mod tests {
 
         assert_eq!(expected.trim_start(), rendered);
 
-        snrkl.set_cell(9, 9, 'U');
+        snrkl.set_cell(9, 9, Op::Uclid);
         let rendered = snrkl.render();
         let expected = r#"
 ⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱
-⸱D⸱⸱⸱⸱⸱⸱⸱⸱
-⸱⸱F⸱⸱⸱⸱⸱⸱⸱
+⸱A⸱⸱⸱⸱⸱⸱⸱⸱
+⸱⸱C⸱⸱⸱⸱⸱⸱⸱
 ⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱
 ⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱
 ⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱
@@ -167,8 +171,8 @@ mod tests {
         let rendered = snrkl.render();
         let expected = r#"
 ⸱⸱⸱⸱
-⸱D⸱⸱
-⸱⸱F⸱
+⸱A⸱⸱
+⸱⸱C⸱
 ⸱⸱⸱⸱
 "#;
 
@@ -178,8 +182,8 @@ mod tests {
         let rendered = snrkl.render();
         let expected = r#"
 ⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱
-⸱D⸱⸱⸱⸱⸱⸱⸱⸱
-⸱⸱F⸱⸱⸱⸱⸱⸱⸱
+⸱A⸱⸱⸱⸱⸱⸱⸱⸱
+⸱⸱C⸱⸱⸱⸱⸱⸱⸱
 ⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱
 ⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱
 ⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱
