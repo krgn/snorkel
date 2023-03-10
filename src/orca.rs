@@ -108,9 +108,9 @@ impl From<char> for Op {
 /// Orca is the central data structure to track the state of
 /// snorkel application.
 pub struct Orca {
-    cols: usize,
-    data: JumpRope,
-    rows: usize,
+    pub cols: usize,
+    pub data: JumpRope,
+    pub rows: usize,
 }
 
 const TOP_LEFT_CORNER: char = '⌌';
@@ -159,6 +159,10 @@ impl Orca {
         let data = init_rope(rows, cols);
         Orca { rows, cols, data }
     }
+
+    // ░█▀▄░█▀▀░█▀▀░▀█▀░▀▀█░█▀▀
+    // ░█▀▄░█▀▀░▀▀█░░█░░▄▀░░█▀▀
+    // ░▀░▀░▀▀▀░▀▀▀░▀▀▀░▀▀▀░▀▀▀
 
     pub fn resize(&mut self, rows: usize, cols: usize) {
         // build new rope...
@@ -240,32 +244,6 @@ impl Orca {
         }
 
         let mut lines = Vec::with_capacity(len_y);
-
-        println!(
-            r#"
-        self:
-            rope_len: {}
-            rows:     {}
-            cols:     {}
-        args:
-            start_x:  {}
-            start_y:  {}
-            end_x:    {}
-            end_y:    {}
-        locals:
-            len_x:    {}
-            len_y:    {}
-        "#,
-            self.data.len_chars(),
-            self.rows,
-            self.cols,
-            start_x,
-            start_y,
-            end_x,
-            end_y,
-            len_x,
-            len_y,
-        );
 
         'rows: for row in start_y..len_y + 1 {
             if row >= self.rows {
