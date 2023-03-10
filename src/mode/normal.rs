@@ -3,6 +3,7 @@ use crossterm::event::{KeyCode, KeyEvent, KeyEventKind, KeyEventState, KeyModifi
 #[derive(Debug)]
 pub enum NormalModeCommand {
     Exit,
+    Delete,
     MoveUp(u8),
     MoveDown(u8),
     MoveLeft(u8),
@@ -72,6 +73,18 @@ impl NormalKeymap {
         }
     }
 
+    pub fn delete(ev: KeyEvent) -> Option<NormalModeCommand> {
+        if ev.kind != KeyEventKind::Press || ev.modifiers != KeyModifiers::NONE {
+            return None;
+        }
+
+        if let KeyCode::Char('d') = ev.code {
+            Some(NormalModeCommand::Delete)
+        } else {
+            None
+        }
+    }
+
     pub fn exit(ev: KeyEvent) -> Option<NormalModeCommand> {
         if ev.kind != KeyEventKind::Press {
             return None;
@@ -90,6 +103,7 @@ impl NormalKeymap {
     pub fn parse_key(ev: KeyEvent) -> Option<NormalModeCommand> {
         NormalKeymap::edit_state(ev)
             .or_else(|| NormalKeymap::movement(ev))
+            .or_else(|| NormalKeymap::delete(ev))
             .or_else(|| NormalKeymap::exit(ev))
     }
 }

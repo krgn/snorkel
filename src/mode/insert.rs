@@ -11,10 +11,12 @@ impl InsertKeymap {
         let code = ev.code;
         let modi = ev.modifiers;
 
+        use InsertModeCommand::*;
         match (code, modi) {
             (KeyCode::Char('['), KeyModifiers::CONTROL) | (KeyCode::Esc, KeyModifiers::NONE) => {
-                Some(InsertModeCommand::Exit)
+                Some(Exit)
             }
+            (KeyCode::Char(char), _) => Some(Val(char)),
             _ => None,
         }
     }
@@ -22,5 +24,6 @@ impl InsertKeymap {
 
 #[derive(Debug)]
 pub enum InsertModeCommand {
+    Val(char),
     Exit,
 }

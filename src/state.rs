@@ -49,6 +49,7 @@ impl AppState {
                         MoveDown(_) => self.move_cursor(cmd),
                         MoveLeft(_) => self.move_cursor(cmd),
                         MoveRight(_) => self.move_cursor(cmd),
+                        Delete => self.snrkl.del_cell(self.cursor.x, self.cursor.y),
                         Exit => (),
                     }
                 }
@@ -58,6 +59,7 @@ impl AppState {
                 if let Some(cmd) = InsertKeymap::parse_key(key) {
                     match cmd {
                         Exit => self.edit_state = EditorState::default(),
+                        Val(char) => self.snrkl.set_cell(self.cursor.x, self.cursor.y, char),
                     }
                 }
             }

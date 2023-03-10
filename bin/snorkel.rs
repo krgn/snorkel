@@ -79,7 +79,7 @@ fn ui<B: tui::backend::Backend>(f: &mut tui::Frame<B>, state: &state::AppState) 
                     spn.push(Span::raw(strng));
                     spn.push(Span::styled(
                         char.to_string(),
-                        Style::default().bg(Color::Yellow),
+                        Style::default().bg(Color::Yellow).fg(Color::Black),
                     ));
                     strng = String::new();
                 }
@@ -88,7 +88,7 @@ fn ui<B: tui::backend::Backend>(f: &mut tui::Frame<B>, state: &state::AppState) 
                     spn.push(Span::raw(strng));
                     spn.push(Span::styled(
                         chars::EMPTY_CELL.to_string(),
-                        Style::default().bg(Color::Yellow),
+                        Style::default().bg(Color::Yellow).fg(Color::Black),
                     ));
                     strng = String::new();
                 }

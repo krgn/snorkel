@@ -58,11 +58,18 @@ impl Snrkl {
         out
     }
 
-    pub fn process_op(&mut self, x: usize, y: usize, op: char) {
+    pub fn set_cell(&mut self, x: usize, y: usize, op: char) {
         if y >= self.rows || x >= self.cols {
             return;
         }
         self.data[y][x] = Some(op)
+    }
+
+    pub fn del_cell(&mut self, x: usize, y: usize) {
+        if y >= self.rows || x >= self.cols {
+            return;
+        }
+        self.data[y][x] = None;
     }
 }
 
@@ -95,8 +102,8 @@ mod tests {
 "#;
         assert_eq!(expected.trim_start(), rendered);
 
-        snrkl.process_op(1, 1, 'D');
-        snrkl.process_op(19, 3, 'F');
+        snrkl.set_cell(1, 1, 'D');
+        snrkl.set_cell(19, 3, 'F');
 
         let rendered = snrkl.render();
         let expected = r#"
@@ -111,8 +118,8 @@ mod tests {
     #[test]
     fn resize_should_work() {
         let mut snrkl = Snrkl::new(4, 4);
-        snrkl.process_op(1, 1, 'D');
-        snrkl.process_op(2, 2, 'F');
+        snrkl.set_cell(1, 1, 'D');
+        snrkl.set_cell(2, 2, 'F');
         let rendered = snrkl.render();
         let expected = r#"
 ⸱⸱⸱⸱
@@ -139,7 +146,7 @@ mod tests {
 
         assert_eq!(expected.trim_start(), rendered);
 
-        snrkl.process_op(9, 9, 'U');
+        snrkl.set_cell(9, 9, 'U');
         let rendered = snrkl.render();
         let expected = r#"
 ⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱
