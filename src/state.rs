@@ -45,10 +45,10 @@ impl AppState {
                         EnterInsertMode => self.edit_state = EditorState::Insert,
                         EnterReplaceMode => self.edit_state = EditorState::Replace,
                         EnterSelectMode => self.edit_state = EditorState::Select,
-                        MoveUp => self.move_cursor(cmd),
-                        MoveDown => self.move_cursor(cmd),
-                        MoveLeft => self.move_cursor(cmd),
-                        MoveRight => self.move_cursor(cmd),
+                        MoveUp(_) => self.move_cursor(cmd),
+                        MoveDown(_) => self.move_cursor(cmd),
+                        MoveLeft(_) => self.move_cursor(cmd),
+                        MoveRight(_) => self.move_cursor(cmd),
                         Exit => (),
                     }
                 }
@@ -91,10 +91,10 @@ impl AppState {
         let y = self.cursor.y;
 
         let (new_x, new_y) = match cmd {
-            MoveDown => (x, cmp::min(y + 1, self.snrkl.rows)),
-            MoveUp => (x, y.checked_sub(1).unwrap_or(0)),
-            MoveLeft => (x.checked_sub(1).unwrap_or(0), y),
-            MoveRight => (cmp::min(x + 1, self.snrkl.rows), y),
+            MoveDown(n) => (x, cmp::min(y + n as usize, self.snrkl.rows)),
+            MoveUp(n) => (x, y.checked_sub(n as usize).unwrap_or(0)),
+            MoveLeft(n) => (x.checked_sub(n as usize).unwrap_or(0), y),
+            MoveRight(n) => (cmp::min(x + n as usize, self.snrkl.rows), y),
             _ => (x, y),
         };
 
