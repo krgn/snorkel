@@ -70,6 +70,8 @@ fn ui<B: tui::backend::Backend>(f: &mut tui::Frame<B>, state: &state::AppState) 
 
     let mut text = vec![];
 
+    let bg_text = Style::default().fg(DARK_GREY);
+
     for y in 0..state.snrkl.rows {
         let mut spn = vec![];
         let mut strng = String::new();
@@ -77,16 +79,23 @@ fn ui<B: tui::backend::Backend>(f: &mut tui::Frame<B>, state: &state::AppState) 
             let is_cursor = state.cursor.x == x && state.cursor.y == y;
             match state.snrkl.get(x, y) {
                 Some(char) if is_cursor => {
-                    spn.push(Span::styled(strng, Style::default().fg(DARK_GREY)));
+                    spn.push(Span::styled(strng, bg_text));
                     spn.push(Span::styled(
                         char.to_string(),
                         Style::default().bg(Color::Yellow).fg(Color::Black),
                     ));
                     strng = String::new();
                 }
-                Some(char) => strng.push(char),
+                Some(char) => {
+                    spn.push(Span::styled(strng, bg_text));
+                    spn.push(Span::styled(
+                        char.to_string(),
+                        Style::default().fg(Color::White),
+                    ));
+                    strng = String::new();
+                }
                 None if is_cursor => {
-                    spn.push(Span::styled(strng, Style::default().fg(DARK_GREY)));
+                    spn.push(Span::styled(strng, bg_text));
                     spn.push(Span::styled(
                         chars::EMPTY_CELL.to_string(),
                         Style::default().bg(Color::Yellow).fg(Color::Black),
