@@ -96,7 +96,7 @@ impl AppState {
             MoveDown(n) => (x, cmp::min(y + n as usize, self.snrkl.rows)),
             MoveUp(n) => (x, y.checked_sub(n as usize).unwrap_or(0)),
             MoveLeft(n) => (x.checked_sub(n as usize).unwrap_or(0), y),
-            MoveRight(n) => (cmp::min(x + n as usize, self.snrkl.rows), y),
+            MoveRight(n) => (cmp::min(x + n as usize, self.snrkl.cols - 1), y),
             _ => (x, y),
         };
 
