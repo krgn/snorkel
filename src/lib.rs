@@ -10,7 +10,6 @@
 pub mod chars;
 pub mod mode;
 pub mod op;
-pub mod orca;
 pub mod simple_loop;
 pub mod snrkl;
 pub mod state;

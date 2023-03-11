@@ -87,10 +87,10 @@ mod tests {
         let snrkl = Snrkl::new(4, 20);
         let rendered = snrkl.render();
         let expected = r#"
-⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱
-⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱
-⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱
-⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱
+····················
+····················
+····················
+····················
 "#;
         assert_eq!(expected.trim_start(), rendered)
     }
@@ -100,10 +100,10 @@ mod tests {
         let mut snrkl = Snrkl::new(4, 20);
         let rendered = snrkl.render();
         let expected = r#"
-⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱
-⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱
-⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱
-⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱
+····················
+····················
+····················
+····················
 "#;
         assert_eq!(expected.trim_start(), rendered);
 
@@ -112,10 +112,10 @@ mod tests {
 
         let rendered = snrkl.render();
         let expected = r#"
-⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱
-⸱A⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱
-⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱
-⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱C
+····················
+·A··················
+····················
+···················C
 "#;
         assert_eq!(expected.trim_start(), rendered);
     }
@@ -127,26 +127,26 @@ mod tests {
         snrkl.set_cell(2, 2, Op::Clock);
         let rendered = snrkl.render();
         let expected = r#"
-⸱⸱⸱⸱
-⸱A⸱⸱
-⸱⸱C⸱
-⸱⸱⸱⸱
+····
+·A··
+··C·
+····
 "#;
         assert_eq!(expected.trim_start(), rendered);
 
         snrkl.resize(10, 10);
         let rendered = snrkl.render();
         let expected = r#"
-⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱
-⸱A⸱⸱⸱⸱⸱⸱⸱⸱
-⸱⸱C⸱⸱⸱⸱⸱⸱⸱
-⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱
-⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱
-⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱
-⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱
-⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱
-⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱
-⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱
+··········
+·A········
+··C·······
+··········
+··········
+··········
+··········
+··········
+··········
+··········
 "#;
 
         assert_eq!(expected.trim_start(), rendered);
@@ -154,16 +154,16 @@ mod tests {
         snrkl.set_cell(9, 9, Op::Uclid);
         let rendered = snrkl.render();
         let expected = r#"
-⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱
-⸱A⸱⸱⸱⸱⸱⸱⸱⸱
-⸱⸱C⸱⸱⸱⸱⸱⸱⸱
-⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱
-⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱
-⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱
-⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱
-⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱
-⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱
-⸱⸱⸱⸱⸱⸱⸱⸱⸱U
+··········
+·A········
+··C·······
+··········
+··········
+··········
+··········
+··········
+··········
+·········U
 "#;
 
         assert_eq!(expected.trim_start(), rendered);
@@ -171,10 +171,10 @@ mod tests {
         snrkl.resize(4, 4);
         let rendered = snrkl.render();
         let expected = r#"
-⸱⸱⸱⸱
-⸱A⸱⸱
-⸱⸱C⸱
-⸱⸱⸱⸱
+····
+·A··
+··C·
+····
 "#;
 
         assert_eq!(expected.trim_start(), rendered);
@@ -182,16 +182,16 @@ mod tests {
         snrkl.resize(10, 10);
         let rendered = snrkl.render();
         let expected = r#"
-⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱
-⸱A⸱⸱⸱⸱⸱⸱⸱⸱
-⸱⸱C⸱⸱⸱⸱⸱⸱⸱
-⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱
-⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱
-⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱
-⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱
-⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱
-⸱⸱⸱⸱⸱⸱⸱⸱⸱⸱
-⸱⸱⸱⸱⸱⸱⸱⸱⸱U
+··········
+·A········
+··C·······
+··········
+··········
+··········
+··········
+··········
+··········
+·········U
 "#;
 
         assert_eq!(expected.trim_start(), rendered);

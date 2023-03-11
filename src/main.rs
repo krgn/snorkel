@@ -16,7 +16,8 @@ fn ui_loop<B: Backend>(terminal: &mut Terminal<B>) -> io::Result<()> {
             return Ok(());
         }
 
-        terminal.draw(|f| ui::render(f, &state))?;
+        terminal.draw(|frame| ui::render(frame, &state))?;
+
         if let Event::Key(key) = event::read()? {
             state.input(key);
         }

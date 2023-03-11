@@ -141,7 +141,7 @@ mod move_cursor {
         for _ in 0..22 {
             app.move_cursor(NormalModeCommand::MoveRight(1));
         }
-        assert_eq!(app.cursor.x, app.snrkl.rows);
+        assert_eq!(app.cursor.x, app.snrkl.cols - 1);
         for _ in 0..22 {
             app.move_cursor(NormalModeCommand::MoveDown(1));
         }
