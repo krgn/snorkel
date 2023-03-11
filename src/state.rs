@@ -104,3 +104,39 @@ impl AppState {
         self.cursor.y = new_y;
     }
 }
+
+#[cfg(test)]
+mod move_cursor {
+    use crate::state::{AppState, NormalModeCommand};
+
+    #[test]
+    fn move_cursor_around() {
+        let mut app = AppState::new(20, 20);
+        app.move_cursor(NormalModeCommand::MoveDown(1));
+        app.move_cursor(NormalModeCommand::MoveRight(1));
+        assert_eq!(app.cursor.x, 1);
+        assert_eq!(app.cursor.y, 1);
+    }
+
+    #[test]
+    fn should_handle_potential_overflow_correctly() {
+        let mut app = AppState::new(20, 20);
+        app.move_cursor(NormalModeCommand::MoveLeft(1));
+        assert_eq!(app.cursor.x, 0);
+        app.move_cursor(NormalModeCommand::MoveUp(1));
+        assert_eq!(app.cursor.y, 0);
+    }
+
+    #[test]
+    fn should_clamp_grid_size() {
+        let mut app = AppState::new(20, 20);
+        for _ in 0..22 {
+            app.move_cursor(NormalModeCommand::MoveRight(1));
+        }
+        assert_eq!(app.cursor.x, app.snrkl.rows);
+        for _ in 0..22 {
+            app.move_cursor(NormalModeCommand::MoveDown(1));
+        }
+        assert_eq!(app.cursor.y, app.snrkl.rows);
+    }
+}

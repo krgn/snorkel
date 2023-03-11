@@ -15,6 +15,7 @@ pub mod simple_loop;
 pub mod snrkl;
 pub mod state;
 pub mod timerfd;
+pub mod ui;
 
 pub struct Event;
 

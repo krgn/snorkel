@@ -3,21 +3,16 @@ use crossterm::{
     execute, terminal, Result,
 };
 use snorkel::{
-    chars,
     mode::{NormalKeymap, NormalModeCommand},
     state::{self, EditorState},
+    ui,
 };
 use std::io;
-use tui::{
-    style::{Color, Style},
-    text::{Span, Spans},
-    widgets::{Block, Borders, Paragraph},
-};
 
-fn run_app<B: tui::backend::Backend>(terminal: &mut tui::Terminal<B>) -> io::Result<()> {
+fn ui_loop<B: tui::backend::Backend>(terminal: &mut tui::Terminal<B>) -> io::Result<()> {
     let mut state = state::AppState::new(20, 80);
     loop {
-        terminal.draw(|f| ui(f, &state))?;
+        terminal.draw(|f| ui::render(f, &state))?;
         if let Event::Key(key) = event::read()? {
             if state.edit_state == EditorState::Normal {
                 if let Some(NormalModeCommand::Exit) = NormalKeymap::exit(key) {
@@ -29,191 +24,11 @@ fn run_app<B: tui::backend::Backend>(terminal: &mut tui::Terminal<B>) -> io::Res
     }
 }
 
-const DARK_GREY: Color = Color::Rgb(90, 90, 90);
-
-fn ui<B: tui::backend::Backend>(f: &mut tui::Frame<B>, state: &state::AppState) {
-    let chunks = tui::layout::Layout::default()
-        .direction(tui::layout::Direction::Vertical)
-        .constraints(
-            [
-                tui::layout::Constraint::Max(4),
-                tui::layout::Constraint::Percentage(80),
-                tui::layout::Constraint::Percentage(10),
-            ]
-            .as_ref(),
-        )
-        .split(f.size());
-
-    let editor_state = match &state.edit_state {
-        EditorState::Normal => Span::styled(
-            "normal",
-            Style::default().bg(Color::Black).fg(Color::White).clone(),
-        ),
-        EditorState::Insert => Span::styled(
-            "insert",
-            Style::default().bg(Color::LightGreen).fg(Color::Black),
-        ),
-        EditorState::Replace => Span::styled(
-            "replace",
-            Style::default().bg(Color::LightBlue).fg(Color::Black),
-        ),
-        EditorState::Select => Span::styled(
-            "select",
-            Style::default().bg(Color::Yellow).fg(Color::Black),
-        ),
-    };
-
-    let items = Spans::from(vec![Span::raw("state: "), editor_state]);
-
-    let p = Paragraph::new(items).block(Block::default().borders(Borders::ALL));
-    f.render_widget(p, chunks[0]);
-
-    let mut text = vec![];
-
-    let bg_text_style = Style::default().fg(DARK_GREY);
-    let comment_style = Style::default().fg(Color::Black).bg(Color::DarkGray);
-    let command_style = Style::default().fg(Color::Black).bg(Color::Cyan);
-    let val_style = Style::default().fg(Color::White);
-
-    for y in 0..state.snrkl.rows {
-        let mut spn = vec![];
-        let mut strng = String::new();
-        let mut in_comment = false;
-        for x in 0..state.snrkl.cols {
-            let is_cursor = state.cursor.x == x && state.cursor.y == y;
-            match state.snrkl.get(x, y) {
-                Some(ref op) if is_cursor && !op.is_comment() => {
-                    let chr: char = op.into();
-                    let style = if in_comment {
-                        comment_style
-                    } else {
-                        bg_text_style
-                    };
-                    spn.push(Span::styled(strng, style));
-                    spn.push(Span::styled(
-                        chr.to_string(),
-                        Style::default().bg(Color::Yellow).fg(Color::Black),
-                    ));
-                    strng = String::new();
-                }
-                Some(ref op) if is_cursor && op.is_comment() && !in_comment => {
-                    let chr: char = op.into();
-                    spn.push(Span::styled(strng, bg_text_style));
-                    spn.push(Span::styled(
-                        chr.to_string(),
-                        Style::default().bg(Color::Yellow).fg(Color::Black),
-                    ));
-                    in_comment = true;
-                    strng = String::new();
-                }
-                Some(ref op) if is_cursor && op.is_comment() && in_comment => {
-                    let chr: char = op.into();
-                    spn.push(Span::styled(strng, comment_style));
-                    spn.push(Span::styled(
-                        chr.to_string(),
-                        Style::default().bg(Color::Yellow).fg(Color::Black),
-                    ));
-                    in_comment = false;
-                    strng = String::new();
-                }
-                Some(ref op) if op.is_primop() => {
-                    let chr: char = op.into();
-                    let prev_style = if in_comment {
-                        comment_style
-                    } else {
-                        bg_text_style
-                    };
-                    let cur_style = if in_comment {
-                        comment_style
-                    } else {
-                        command_style
-                    };
-                    spn.push(Span::styled(strng, prev_style));
-                    spn.push(Span::styled(chr.to_string(), cur_style));
-                    strng = String::new();
-                }
-                Some(ref op) if op.is_comment() && !in_comment => {
-                    let chr: char = op.into();
-                    spn.push(Span::styled(strng, bg_text_style));
-                    spn.push(Span::styled(chr.to_string(), comment_style));
-                    in_comment = true;
-                    strng = String::new();
-                }
-                Some(ref op) if op.is_comment() && in_comment => {
-                    let chr: char = op.into();
-                    spn.push(Span::styled(strng, comment_style));
-                    spn.push(Span::styled(chr.to_string(), comment_style));
-                    in_comment = false;
-                    strng = String::new();
-                }
-                Some(ref op) => {
-                    let chr: char = op.into();
-                    let prev_style = if in_comment {
-                        comment_style
-                    } else {
-                        bg_text_style
-                    };
-                    let cur_style = if in_comment { comment_style } else { val_style };
-                    spn.push(Span::styled(strng, prev_style));
-                    spn.push(Span::styled(chr.to_string(), cur_style));
-                    strng = String::new();
-                }
-                None if is_cursor => {
-                    let style = if in_comment {
-                        comment_style
-                    } else {
-                        bg_text_style
-                    };
-                    spn.push(Span::styled(strng, style));
-                    spn.push(Span::styled(
-                        chars::EMPTY_CELL.to_string(),
-                        Style::default().bg(Color::Yellow).fg(Color::Black),
-                    ));
-                    strng = String::new();
-                }
-                None => strng.push(chars::EMPTY_CELL),
-            }
-        }
-        if in_comment {
-            spn.push(Span::styled(strng, comment_style));
-        } else {
-            spn.push(Span::styled(strng, bg_text_style));
-        }
-        text.push(Spans::from(spn))
-    }
-
-    let p = Paragraph::new(text).block(Block::default().title("Snorkel").borders(Borders::ALL));
-    f.render_widget(p, chunks[1]);
-
-    let tui_w = tui_logger::TuiLoggerWidget::default()
-        .block(
-            Block::default()
-                .title("Logs")
-                .border_style(
-                    tui::style::Style::default()
-                        .fg(Color::White)
-                        .bg(Color::Black),
-                )
-                .borders(Borders::ALL),
-        )
-        .output_separator('|')
-        .output_timestamp(Some("%F %H:%M:%S%.3f".to_string()))
-        .output_level(Some(tui_logger::TuiLoggerLevelOutput::Long))
-        .output_target(false)
-        .output_file(false)
-        .output_line(false)
-        .style(
-            tui::style::Style::default()
-                .fg(Color::White)
-                .bg(Color::Black),
-        );
-    f.render_widget(tui_w, chunks[2]);
-}
-
 fn main() -> Result<()> {
     // ░█▀▀░▀█▀░█▀█░█▀▄░▀█▀░█░█░█▀█
     // ░▀▀█░░█░░█▀█░█▀▄░░█░░█░█░█▀▀
     // ░▀▀▀░░▀░░▀░▀░▀░▀░░▀░░▀▀▀░▀░░
+
     tui_logger::init_logger(log::LevelFilter::Info).unwrap();
     tui_logger::set_default_level(log::LevelFilter::Info);
 
@@ -231,7 +46,7 @@ fn main() -> Result<()> {
     // ░█▀█░█▀▀░█▀▀
     // ░▀░▀░▀░░░▀░░
 
-    let res = run_app(&mut terminal);
+    let res = ui_loop(&mut terminal);
 
     // ░█▀▀░█░█░█░█░▀█▀░█▀▄░█▀█░█░█░█▀█
     // ░▀▀█░█▀█░█░█░░█░░█░█░█░█░█▄█░█░█
@@ -250,40 +65,4 @@ fn main() -> Result<()> {
     }
 
     Ok(())
-}
-
-#[cfg(test)]
-mod move_cursor {
-    use crate::{state::AppState, NormalModeCommand};
-
-    #[test]
-    fn move_cursor_around() {
-        let mut app = AppState::new(20, 20);
-        app.move_cursor(NormalModeCommand::MoveDown(1));
-        app.move_cursor(NormalModeCommand::MoveRight(1));
-        assert_eq!(app.cursor.x, 1);
-        assert_eq!(app.cursor.y, 1);
-    }
-
-    #[test]
-    fn should_handle_potential_overflow_correctly() {
-        let mut app = AppState::new(20, 20);
-        app.move_cursor(NormalModeCommand::MoveLeft(1));
-        assert_eq!(app.cursor.x, 0);
-        app.move_cursor(NormalModeCommand::MoveUp(1));
-        assert_eq!(app.cursor.y, 0);
-    }
-
-    #[test]
-    fn should_clamp_grid_size() {
-        let mut app = AppState::new(20, 20);
-        for _ in 0..22 {
-            app.move_cursor(NormalModeCommand::MoveRight(1));
-        }
-        assert_eq!(app.cursor.x, app.snrkl.rows);
-        for _ in 0..22 {
-            app.move_cursor(NormalModeCommand::MoveDown(1));
-        }
-        assert_eq!(app.cursor.y, app.snrkl.rows);
-    }
 }
