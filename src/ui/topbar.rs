@@ -23,6 +23,13 @@ pub fn render(state: &AppState) -> Paragraph {
             "select",
             Style::default().bg(Color::Yellow).fg(Color::Black),
         ),
+        EditorState::QuitRequested => Span::styled(
+            "quitting",
+            Style::default().bg(Color::Yellow).fg(Color::Black),
+        ),
+        EditorState::QuitConfirmed => {
+            Span::styled("quit", Style::default().bg(Color::Yellow).fg(Color::Black))
+        }
     };
 
     let items = Spans::from(vec![Span::raw("state: "), editor_state]);

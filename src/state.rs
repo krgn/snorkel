@@ -3,7 +3,7 @@ use crate::mode::{
     ReplaceModeCommand, SelectKeymap, SelectModeCommand,
 };
 use crate::snrkl::Snrkl;
-use crossterm::event::KeyEvent;
+use crossterm::event::{KeyCode, KeyEvent};
 use std::cmp;
 
 #[derive(Default)]
@@ -19,6 +19,8 @@ pub enum EditorState {
     Normal,
     Replace,
     Select,
+    QuitRequested,
+    QuitConfirmed,
 }
 
 pub struct AppState {
@@ -50,7 +52,7 @@ impl AppState {
                         MoveLeft(_) => self.move_cursor(cmd),
                         MoveRight(_) => self.move_cursor(cmd),
                         Delete => self.snrkl.del_cell(self.cursor.x, self.cursor.y),
-                        Exit => (),
+                        Exit => self.edit_state = EditorState::QuitRequested,
                     }
                 }
             }
@@ -83,6 +85,12 @@ impl AppState {
                     }
                 }
             }
+            EditorState::QuitRequested => match key.code {
+                KeyCode::Esc => self.edit_state = EditorState::Normal,
+                KeyCode::Enter => self.edit_state = EditorState::QuitConfirmed,
+                _ => (),
+            },
+            EditorState::QuitConfirmed => (),
         }
     }
 

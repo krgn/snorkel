@@ -3,22 +3,21 @@ use crossterm::{
     execute, terminal, Result,
 };
 use snorkel::{
-    mode::{NormalKeymap, NormalModeCommand},
     state::{self, EditorState},
     ui,
 };
 use std::io;
+use tui::{backend::Backend, Terminal};
 
-fn ui_loop<B: tui::backend::Backend>(terminal: &mut tui::Terminal<B>) -> io::Result<()> {
+fn ui_loop<B: Backend>(terminal: &mut Terminal<B>) -> io::Result<()> {
     let mut state = state::AppState::new(20, 80);
     loop {
+        if state.edit_state == EditorState::QuitConfirmed {
+            return Ok(());
+        }
+
         terminal.draw(|f| ui::render(f, &state))?;
         if let Event::Key(key) = event::read()? {
-            if state.edit_state == EditorState::Normal {
-                if let Some(NormalModeCommand::Exit) = NormalKeymap::exit(key) {
-                    return Ok(());
-                }
-            }
             state.input(key);
         }
     }
@@ -40,7 +39,7 @@ fn main() -> Result<()> {
         event::EnableMouseCapture
     )?;
     let backend = tui::backend::CrosstermBackend::new(stdout);
-    let mut terminal = tui::Terminal::new(backend)?;
+    let mut terminal = Terminal::new(backend)?;
 
     // ░█▀█░█▀█░█▀█
     // ░█▀█░█▀▀░█▀▀
