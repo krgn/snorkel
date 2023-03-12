@@ -25,6 +25,12 @@ pub mod util {
     {
         std::cmp::max(std::cmp::min(x, hi), lo)
     }
+
+    #[derive(Clone, Default)]
+    pub struct Coord {
+        pub x: usize,
+        pub y: usize,
+    }
 }
 
 // ░█▄█░▀█▀░█▀▄░▀█▀

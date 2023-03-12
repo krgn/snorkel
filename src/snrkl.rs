@@ -1,4 +1,4 @@
-use crate::op::Op;
+use crate::{op::Op, util::Coord};
 
 pub struct Snrkl {
     pub rows: usize,
@@ -16,8 +16,26 @@ impl Snrkl {
         Snrkl { rows, cols, data }
     }
 
-    pub fn get(&self, x: usize, y: usize) -> Option<Op> {
-        self.data[y][x]
+    pub fn get_cell(&self, loc: &Coord) -> Option<Op> {
+        self.data[loc.y][loc.x]
+    }
+
+    pub fn set_cell(&mut self, loc: &Coord, op: Op) -> Option<Op> {
+        if loc.y >= self.rows || loc.x >= self.cols {
+            return None;
+        }
+        let old = self.get_cell(loc);
+        self.data[loc.y][loc.x] = Some(op);
+        old
+    }
+
+    pub fn del_cell(&mut self, loc: &Coord) -> Option<Op> {
+        if loc.y >= self.rows || loc.x >= self.cols {
+            return None;
+        }
+        let old = self.get_cell(loc);
+        self.data[loc.y][loc.x] = None;
+        old
     }
 
     pub fn resize(&mut self, x: usize, y: usize) {
@@ -60,25 +78,11 @@ impl Snrkl {
         }
         out
     }
-
-    pub fn set_cell(&mut self, x: usize, y: usize, op: Op) {
-        if y >= self.rows || x >= self.cols {
-            return;
-        }
-        self.data[y][x] = Some(op)
-    }
-
-    pub fn del_cell(&mut self, x: usize, y: usize) {
-        if y >= self.rows || x >= self.cols {
-            return;
-        }
-        self.data[y][x] = None;
-    }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::op::Op;
+    use crate::{op::Op, util::Coord};
 
     use super::Snrkl;
 
@@ -107,8 +111,8 @@ mod tests {
 "#;
         assert_eq!(expected.trim_start(), rendered);
 
-        snrkl.set_cell(1, 1, Op::Add);
-        snrkl.set_cell(19, 3, Op::Clock);
+        snrkl.set_cell(&Coord { x: 1, y: 1 }, Op::Add);
+        snrkl.set_cell(&Coord { x: 19, y: 3 }, Op::Clock);
 
         let rendered = snrkl.render();
         let expected = r#"
@@ -123,8 +127,8 @@ mod tests {
     #[test]
     fn resize_should_work() {
         let mut snrkl = Snrkl::new(4, 4);
-        snrkl.set_cell(1, 1, Op::Add);
-        snrkl.set_cell(2, 2, Op::Clock);
+        snrkl.set_cell(&Coord { x: 1, y: 1 }, Op::Add);
+        snrkl.set_cell(&Coord { x: 2, y: 2 }, Op::Clock);
         let rendered = snrkl.render();
         let expected = r#"
 ····
@@ -151,7 +155,7 @@ mod tests {
 
         assert_eq!(expected.trim_start(), rendered);
 
-        snrkl.set_cell(9, 9, Op::Uclid);
+        snrkl.set_cell(&Coord { x: 9, y: 9 }, Op::Uclid);
         let rendered = snrkl.render();
         let expected = r#"
 ··········

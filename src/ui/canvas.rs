@@ -1,5 +1,5 @@
 use super::DARK_GREY;
-use crate::{chars, state::AppState};
+use crate::{chars, state::AppState, util::Coord};
 use tui::{
     style::{Color, Style},
     text::{Span, Spans},
@@ -20,7 +20,7 @@ pub fn render(state: &AppState) -> Paragraph {
         let mut in_comment = false;
         for x in 0..state.snrkl.cols {
             let is_cursor = state.cursor.x == x && state.cursor.y == y;
-            match state.snrkl.get(x, y) {
+            match state.snrkl.get_cell(&Coord { x, y }) {
                 Some(ref op) if is_cursor && !op.is_comment() => {
                     let chr: char = op.into();
                     let style = if in_comment {

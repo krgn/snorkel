@@ -2,15 +2,11 @@ use crate::mode::{
     InsertKeymap, InsertModeCommand, NormalKeymap, NormalModeCommand, ReplaceKeymap,
     ReplaceModeCommand, SelectKeymap, SelectModeCommand,
 };
+use crate::op::Op;
 use crate::snrkl::Snrkl;
+use crate::util::Coord;
 use crossterm::event::{KeyCode, KeyEvent};
 use std::cmp;
-
-#[derive(Default)]
-pub struct Coord {
-    pub x: usize,
-    pub y: usize,
-}
 
 #[derive(Default, Debug, Eq, PartialEq, PartialOrd, Ord)]
 pub enum EditorState {
@@ -26,6 +22,8 @@ pub enum EditorState {
 pub struct AppState {
     pub cursor: Coord,
     pub edit_state: EditorState,
+    pub undo_steps: Vec<(Coord, Option<Op>)>,
+    pub redo_steps: Vec<(Coord, Option<Op>)>,
     pub snrkl: Snrkl,
 }
 
@@ -35,6 +33,8 @@ impl AppState {
             snrkl: Snrkl::new(rows, cols),
             cursor: Coord::default(),
             edit_state: EditorState::default(),
+            undo_steps: Vec::new(),
+            redo_steps: Vec::new(),
         }
     }
 
@@ -51,7 +51,28 @@ impl AppState {
                         MoveDown(_) => self.move_cursor(cmd),
                         MoveLeft(_) => self.move_cursor(cmd),
                         MoveRight(_) => self.move_cursor(cmd),
-                        Delete => self.snrkl.del_cell(self.cursor.x, self.cursor.y),
+                        Delete => {
+                            let old = self.snrkl.del_cell(&self.cursor);
+                            self.undo_steps.push((self.cursor.clone(), old));
+                        }
+                        Undo => {
+                            if let Some((loc, maybe_op)) = self.undo_steps.pop() {
+                                let old = match maybe_op {
+                                    Some(op) => self.snrkl.set_cell(&loc, op),
+                                    None => self.snrkl.del_cell(&loc),
+                                };
+                                self.redo_steps.push((loc, old));
+                            }
+                        }
+                        Redo => {
+                            if let Some((loc, maybe_op)) = self.redo_steps.pop() {
+                                let old = match maybe_op {
+                                    Some(op) => self.snrkl.set_cell(&loc, op),
+                                    None => self.snrkl.del_cell(&loc),
+                                };
+                                self.undo_steps.push((loc, old));
+                            }
+                        }
                         Exit => self.edit_state = EditorState::QuitRequested,
                     }
                 }
@@ -61,7 +82,10 @@ impl AppState {
                 if let Some(cmd) = InsertKeymap::parse_key(key) {
                     match cmd {
                         Exit => self.edit_state = EditorState::default(),
-                        Op(op) => self.snrkl.set_cell(self.cursor.x, self.cursor.y, op),
+                        Op(op) => {
+                            let old = self.snrkl.set_cell(&self.cursor, op);
+                            self.undo_steps.push((self.cursor.clone(), old));
+                        }
                     }
                 }
             }
@@ -71,7 +95,8 @@ impl AppState {
                     match cmd {
                         Exit => self.edit_state = EditorState::default(),
                         Op(op) => {
-                            self.snrkl.set_cell(self.cursor.x, self.cursor.y, op);
+                            let old = self.snrkl.set_cell(&self.cursor, op);
+                            self.undo_steps.push((self.cursor.clone(), old));
                             self.move_cursor(NormalModeCommand::MoveRight(1));
                         }
                     }
