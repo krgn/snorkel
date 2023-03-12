@@ -7,7 +7,7 @@
 // TODO: turn this back on
 // #![warn(missing_docs)]
 
-pub mod chars;
+pub mod config;
 pub mod mode;
 pub mod op;
 pub mod simple_loop;
@@ -19,6 +19,8 @@ pub mod ui;
 pub struct Event;
 
 pub mod util {
+    use std::cmp;
+
     pub fn clip<T>(x: T, lo: T, hi: T) -> T
     where
         T: Ord,
@@ -26,10 +28,102 @@ pub mod util {
         std::cmp::max(std::cmp::min(x, hi), lo)
     }
 
-    #[derive(Clone, Default)]
+    #[derive(Debug, Clone, Default, Eq, PartialEq, PartialOrd, Ord)]
+    pub struct Selection {
+        start_x: usize,
+        start_y: usize,
+        end_x: usize,
+        end_y: usize,
+    }
+
+    impl Selection {
+        pub fn from(a: &Coord, b: &Coord) -> Selection {
+            let start_x = cmp::min(a.x, b.x);
+            let start_y = cmp::min(a.y, b.y);
+            let end_x = cmp::max(a.x, b.x);
+            let end_y = cmp::max(a.y, b.y);
+            Selection {
+                start_x,
+                start_y,
+                end_x,
+                end_y,
+            }
+        }
+
+        pub fn contains(&self, loc: &Coord) -> bool {
+            return self.start_x <= loc.x
+                && loc.x <= self.end_x
+                && self.start_y <= loc.y
+                && loc.y <= self.end_y;
+        }
+    }
+
+    #[cfg(test)]
+    mod selection_tests {
+        use super::{Coord, Selection};
+
+        #[test]
+        fn should_correctly_identify_position_inside_selection() {
+            let start = Coord { x: 3, y: 3 };
+            let end = Coord { x: 0, y: 0 };
+            let selection = Selection::from(&start, &end);
+            // all these points are inside
+            for y in 0..4 {
+                for x in 0..4 {
+                    assert!(selection.contains(&Coord { x, y }))
+                }
+            }
+            // all these points are outside
+            for y in 4..20 {
+                for x in 4..20 {
+                    assert!(!selection.contains(&Coord { x, y }))
+                }
+            }
+        }
+
+        #[test]
+        fn should_correctly_identify_position_inside_flipped_selection() {
+            let start = Coord { x: 0, y: 0 };
+            let end = Coord { x: 3, y: 3 };
+            let selection = Selection::from(&start, &end);
+            // all these points are inside
+            for y in 0..4 {
+                for x in 0..4 {
+                    assert!(selection.contains(&Coord { x, y }))
+                }
+            }
+            // all these points are outside
+            for y in 4..20 {
+                for x in 4..20 {
+                    assert!(!selection.contains(&Coord { x, y }))
+                }
+            }
+        }
+    }
+
+    #[derive(Debug, Clone, Default, Eq, PartialEq, PartialOrd, Ord)]
     pub struct Coord {
         pub x: usize,
         pub y: usize,
+    }
+
+    #[cfg(test)]
+    mod coord_tests {
+        use super::Coord;
+
+        #[test]
+        fn comparison_of_same_values_should_work_correctly() {
+            let a = Coord { x: 1, y: 2 };
+            let b = Coord { x: 1, y: 2 };
+            assert_eq!(a, b)
+        }
+
+        #[test]
+        fn comparison_of_struturally_different_values_should_work_correctly() {
+            let a = Coord { x: 1, y: 8 };
+            let b = Coord { x: 1, y: 2 };
+            assert_ne!(a, b)
+        }
     }
 }
 

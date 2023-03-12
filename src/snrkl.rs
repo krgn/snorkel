@@ -64,14 +64,15 @@ impl Snrkl {
     // Only used in tests.
     #[cfg(test)]
     pub fn render(&self) -> String {
-        use crate::chars;
+        use crate::config::CharConfig;
+        let chars = CharConfig::default();
         let mut out = String::with_capacity(self.rows * self.cols + self.rows);
         for row in 0..self.rows {
             for col in 0..self.cols {
                 if let Some(op) = &self.data[row][col] {
                     out.push(op.into());
                 } else {
-                    out.push(chars::EMPTY_CELL);
+                    out.push(chars.empty);
                 }
             }
             out.push('\n');

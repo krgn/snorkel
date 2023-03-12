@@ -1,6 +1,5 @@
 use tui::{
     layout::{Constraint, Direction, Layout, Rect},
-    style::Color,
     widgets::{Block, Borders, Clear},
 };
 
@@ -9,8 +8,6 @@ use crate::state::{self, EditorState};
 mod bottombar;
 mod canvas;
 mod topbar;
-
-const DARK_GREY: Color = Color::Rgb(90, 90, 90);
 
 pub fn render<B: tui::backend::Backend>(f: &mut tui::Frame<B>, state: &state::AppState) {
     let chunks = tui::layout::Layout::default()

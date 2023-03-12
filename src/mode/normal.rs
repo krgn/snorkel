@@ -1,15 +1,14 @@
 use crossterm::event::{KeyCode, KeyEvent, KeyEventKind, KeyEventState, KeyModifiers};
 
+use super::Movement;
+
 #[derive(Debug)]
 pub enum NormalModeCommand {
     Exit,
     Delete,
     Undo,
     Redo,
-    MoveUp(u8),
-    MoveDown(u8),
-    MoveLeft(u8),
-    MoveRight(u8),
+    Move(Movement),
     EnterInsertMode,
     EnterReplaceMode,
     EnterSelectMode,
@@ -50,27 +49,29 @@ impl NormalKeymap {
 
         match (code, modi) {
             (KeyCode::Char('h'), KeyModifiers::NONE) => {
-                Some(NormalModeCommand::MoveLeft(REGULAR_MOVE))
+                Some(NormalModeCommand::Move(Movement::Left(REGULAR_MOVE)))
             }
             (KeyCode::Char('l'), KeyModifiers::NONE) => {
-                Some(NormalModeCommand::MoveRight(REGULAR_MOVE))
+                Some(NormalModeCommand::Move(Movement::Right(REGULAR_MOVE)))
             }
             (KeyCode::Char('j'), KeyModifiers::NONE) => {
-                Some(NormalModeCommand::MoveDown(REGULAR_MOVE))
+                Some(NormalModeCommand::Move(Movement::Down(REGULAR_MOVE)))
             }
             (KeyCode::Char('k'), KeyModifiers::NONE) => {
-                Some(NormalModeCommand::MoveUp(REGULAR_MOVE))
+                Some(NormalModeCommand::Move(Movement::Up(REGULAR_MOVE)))
             }
             (KeyCode::Char('H'), KeyModifiers::SHIFT) => {
-                Some(NormalModeCommand::MoveLeft(FAST_MOVE))
+                Some(NormalModeCommand::Move(Movement::Left(FAST_MOVE)))
             }
             (KeyCode::Char('L'), KeyModifiers::SHIFT) => {
-                Some(NormalModeCommand::MoveRight(FAST_MOVE))
+                Some(NormalModeCommand::Move(Movement::Right(FAST_MOVE)))
             }
             (KeyCode::Char('J'), KeyModifiers::SHIFT) => {
-                Some(NormalModeCommand::MoveDown(FAST_MOVE))
+                Some(NormalModeCommand::Move(Movement::Down(FAST_MOVE)))
             }
-            (KeyCode::Char('K'), KeyModifiers::SHIFT) => Some(NormalModeCommand::MoveUp(FAST_MOVE)),
+            (KeyCode::Char('K'), KeyModifiers::SHIFT) => {
+                Some(NormalModeCommand::Move(Movement::Up(FAST_MOVE)))
+            }
             _ => None,
         }
     }
