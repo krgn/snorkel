@@ -21,6 +21,15 @@ let
     };
   });
 
+  gdb-custom = pkgs.gdb.overrideDerivation(attrs: rec {
+    version = "13.1";
+    name = "gdb-${version}";
+    src = pkgs.fetchurl {
+      url = "https://ftp.gnu.org/gnu/gdb/gdb-${version}.tar.gz";
+      sha256 = "sha256-TMPXFD1tVNKJ0iex5yidvA+ky9RhMauHE24eqDHPRtQ=";
+    };
+  });
+
   debug-tests = pkgs.writeScriptBin "debug-tests" ''
   #!/usr/bin/env bash
   exe=$(
@@ -36,7 +45,7 @@ let
 in  mkShell (lib.mergeAttrs secrets {
   buildInputs = [ 
     # rust + native deps
-    lldb_15 gdb pkg-config openssl unstable.clang_14
+    lldb_15 gdb-custom pkg-config openssl unstable.clang_14
     portmidi
     rustup mold-custom python-custom
     debug-tests

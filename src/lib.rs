@@ -30,10 +30,10 @@ pub mod util {
 
     #[derive(Debug, Clone, Default, Eq, PartialEq, PartialOrd, Ord)]
     pub struct Selection {
-        start_x: usize,
-        start_y: usize,
-        end_x: usize,
-        end_y: usize,
+        pub start_x: usize,
+        pub start_y: usize,
+        pub end_x: usize,
+        pub end_y: usize,
     }
 
     impl Selection {

@@ -1,4 +1,10 @@
-use crate::{op::Op, util::Coord};
+use std::cmp;
+
+use crate::{
+    op::Op,
+    state::UndoOp,
+    util::{Coord, Selection},
+};
 
 pub struct Snrkl {
     pub rows: usize,
@@ -14,6 +20,51 @@ impl Snrkl {
         }
         assert_eq!(data.len(), rows);
         Snrkl { rows, cols, data }
+    }
+
+    pub fn copy_selection(&self, sel: &Selection) -> Vec<Vec<Option<Op>>> {
+        let mut out = vec![];
+        for y in sel.start_y..sel.end_y + 1 {
+            let mut row = vec![];
+            for x in sel.start_x..sel.end_x + 1 {
+                let point = Coord { x, y };
+                row.push(self.get_cell(&point));
+            }
+            out.push(row)
+        }
+        out
+    }
+
+    pub fn paste_selection(&mut self, loc: &Coord, selection: &Vec<Vec<Option<Op>>>) -> UndoOp {
+        let mut undo_ops = vec![];
+        'outer: for y in 0..selection.len() {
+            let row = &selection[y]; // get the source row from the selection
+            let offset_y = cmp::min(y + loc.y, self.rows);
+            if offset_y >= self.rows {
+                break 'outer;
+            }
+            'inner: for x in 0..row.len() {
+                let offset_x = cmp::min(x + loc.x, self.cols);
+                if offset_x >= self.cols {
+                    break 'inner;
+                }
+                let target = Coord {
+                    x: offset_x,
+                    y: offset_y,
+                };
+                match row[x] {
+                    Some(op) => {
+                        let old = self.set_cell(&target, op);
+                        undo_ops.push((target, old));
+                    }
+                    None => {
+                        let old = self.del_cell(&target);
+                        undo_ops.push((target, old));
+                    }
+                }
+            }
+        }
+        UndoOp::batch(undo_ops)
     }
 
     pub fn get_cell(&self, loc: &Coord) -> Option<Op> {
@@ -78,6 +129,89 @@ impl Snrkl {
             out.push('\n');
         }
         out
+    }
+}
+
+#[cfg(test)]
+mod copy_paste_tests {
+    use crate::{
+        op::Op,
+        snrkl::Snrkl,
+        util::{Coord, Selection},
+    };
+
+    #[test]
+    fn should_copy_selection() {
+        let mut snrkl = Snrkl::new(4, 20);
+        snrkl.set_cell(&Coord { x: 1, y: 1 }, Op::Add);
+        snrkl.set_cell(&Coord { x: 2, y: 2 }, Op::Clock);
+
+        let rendered = snrkl.render();
+        let expected = r#"
+····················
+·A··················
+··C·················
+····················
+"#;
+        assert_eq!(expected.trim_start(), rendered);
+
+        let sel = Selection {
+            start_x: 1,
+            start_y: 1,
+            end_x: 2,
+            end_y: 2,
+        };
+        let copy_buffer = snrkl.copy_selection(&sel);
+
+        assert_eq!(2, copy_buffer.len());
+        assert_eq!(Some(Op::Add), copy_buffer[0][0]);
+        assert_eq!(None, copy_buffer[0][1]);
+        assert_eq!(None, copy_buffer[1][0]);
+        assert_eq!(Some(Op::Clock), copy_buffer[1][1]);
+    }
+
+    #[test]
+    fn should_paste_selection() {
+        // should result in something like:
+        // -----
+        // |1A1|
+        // |.2.|
+        // -----
+        let selection = vec![
+            vec![Some(Op::Val('1')), Some(Op::Add), Some(Op::Val('1'))],
+            vec![None, Some(Op::Val('2')), None],
+        ];
+        let target = Coord { x: 1, y: 2 };
+
+        let mut snrkl = Snrkl::new(4, 20);
+        snrkl.paste_selection(&target, &selection);
+        let rendered = snrkl.render();
+        let expected = r#"
+····················
+····················
+·1A1················
+··2·················
+"#;
+        assert_eq!(expected.trim_start(), rendered)
+    }
+
+    #[test]
+    fn should_paste_not_crash_at_edge() {
+        let selection = vec![
+            vec![Some(Op::Val('1')), Some(Op::Add), Some(Op::Val('1'))],
+            vec![None, Some(Op::Val('2')), None],
+        ];
+        let target = Coord { x: 1, y: 2 };
+
+        let mut snrkl = Snrkl::new(3, 3);
+        snrkl.paste_selection(&target, &selection);
+        let rendered = snrkl.render();
+        let expected = r#"
+···
+···
+·1A
+"#;
+        assert_eq!(expected.trim_start(), rendered)
     }
 }
 

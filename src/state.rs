@@ -5,9 +5,10 @@ use crate::mode::{
 };
 use crate::op::Op;
 use crate::snrkl::Snrkl;
-use crate::util::Coord;
+use crate::util::{Coord, Selection};
 use crossterm::event::{KeyCode, KeyEvent};
 use std::cmp;
+use std::time::Instant;
 
 #[derive(Default, Debug, Eq, PartialEq, PartialOrd, Ord)]
 pub enum EditorState {
@@ -20,11 +21,42 @@ pub enum EditorState {
     QuitConfirmed,
 }
 
+#[derive(Debug)]
+pub enum UndoOp {
+    Step {
+        ts: Instant,
+        loc: Coord,
+        op: Option<Op>,
+    },
+    Batch {
+        ts: Instant,
+        ops: Vec<(Coord, Option<Op>)>,
+    },
+}
+
+impl UndoOp {
+    pub fn step(loc: &Coord, op: Option<Op>) -> Self {
+        UndoOp::Step {
+            ts: Instant::now(),
+            loc: loc.clone(),
+            op,
+        }
+    }
+
+    pub fn batch(ops: Vec<(Coord, Option<Op>)>) -> Self {
+        UndoOp::Batch {
+            ts: Instant::now(),
+            ops,
+        }
+    }
+}
+
 pub struct AppState {
     pub cursor: Coord,
     pub edit_state: EditorState,
-    pub undo_steps: Vec<(Coord, Option<Op>)>,
-    pub redo_steps: Vec<(Coord, Option<Op>)>,
+    pub undo_steps: Vec<UndoOp>,
+    pub redo_steps: Vec<UndoOp>,
+    pub clipboard: Option<Vec<Vec<Option<Op>>>>,
     pub sel_start: Option<Coord>,
     pub snrkl: Snrkl,
     pub config: Config,
@@ -33,13 +65,14 @@ pub struct AppState {
 impl AppState {
     pub fn new(rows: usize, cols: usize) -> AppState {
         AppState {
-            snrkl: Snrkl::new(rows, cols),
+            clipboard: None,
+            config: Config::default(),
             cursor: Coord::default(),
             edit_state: EditorState::default(),
-            undo_steps: Vec::new(),
             redo_steps: Vec::new(),
             sel_start: None,
-            config: Config::default(),
+            snrkl: Snrkl::new(rows, cols),
+            undo_steps: Vec::new(),
         }
     }
 
@@ -55,24 +88,64 @@ impl AppState {
                         Move(movement) => self.move_cursor(movement),
                         Delete => {
                             let old = self.snrkl.del_cell(&self.cursor);
-                            self.undo_steps.push((self.cursor.clone(), old));
+                            self.undo_steps.push(UndoOp::step(&self.cursor, old));
+                        }
+                        Paste => {
+                            if let Some(data) = &self.clipboard {
+                                let undo = self.snrkl.paste_selection(&self.cursor, &data);
+                                self.undo_steps.push(undo);
+                            }
                         }
                         Undo => {
-                            if let Some((loc, maybe_op)) = self.undo_steps.pop() {
-                                let old = match maybe_op {
-                                    Some(op) => self.snrkl.set_cell(&loc, op),
-                                    None => self.snrkl.del_cell(&loc),
-                                };
-                                self.redo_steps.push((loc, old));
+                            // TODO: we could make this into a method maybe to prevent
+                            // code duplication?
+                            use UndoOp::*;
+                            match self.undo_steps.pop() {
+                                Some(Step { ts: _, loc, op }) => {
+                                    let old = match op {
+                                        Some(op) => self.snrkl.set_cell(&loc, op),
+                                        None => self.snrkl.del_cell(&loc),
+                                    };
+                                    self.redo_steps.push(UndoOp::step(&loc, old));
+                                }
+                                Some(Batch { ts: _, ops }) => {
+                                    let mut old_ops = vec![];
+                                    for (loc, op) in ops {
+                                        let old = match op {
+                                            Some(op) => self.snrkl.set_cell(&loc, op),
+                                            None => self.snrkl.del_cell(&loc),
+                                        };
+                                        old_ops.push((loc, old));
+                                    }
+                                    self.redo_steps.push(UndoOp::batch(old_ops));
+                                }
+                                None => (),
                             }
                         }
                         Redo => {
-                            if let Some((loc, maybe_op)) = self.redo_steps.pop() {
-                                let old = match maybe_op {
-                                    Some(op) => self.snrkl.set_cell(&loc, op),
-                                    None => self.snrkl.del_cell(&loc),
-                                };
-                                self.undo_steps.push((loc, old));
+                            // TODO: we could make this into a method maybe to prevent
+                            // code duplication?
+                            use UndoOp::*;
+                            match self.redo_steps.pop() {
+                                Some(Step { ts: _, loc, op }) => {
+                                    let old = match op {
+                                        Some(op) => self.snrkl.set_cell(&loc, op),
+                                        None => self.snrkl.del_cell(&loc),
+                                    };
+                                    self.undo_steps.push(UndoOp::step(&loc, old));
+                                }
+                                Some(Batch { ts: _, ops }) => {
+                                    let mut old_ops = vec![];
+                                    for (loc, op) in ops {
+                                        let old = match op {
+                                            Some(op) => self.snrkl.set_cell(&loc, op),
+                                            None => self.snrkl.del_cell(&loc),
+                                        };
+                                        old_ops.push((loc, old));
+                                    }
+                                    self.undo_steps.push(UndoOp::batch(old_ops));
+                                }
+                                None => (),
                             }
                         }
                         Exit => self.edit_state = EditorState::QuitRequested,
@@ -86,7 +159,7 @@ impl AppState {
                         Exit => self.edit_state = EditorState::default(),
                         Op(op) => {
                             let old = self.snrkl.set_cell(&self.cursor, op);
-                            self.undo_steps.push((self.cursor.clone(), old));
+                            self.undo_steps.push(UndoOp::step(&self.cursor, old));
                         }
                     }
                 }
@@ -98,7 +171,7 @@ impl AppState {
                         Exit => self.edit_state = EditorState::default(),
                         Op(op) => {
                             let old = self.snrkl.set_cell(&self.cursor, op);
-                            self.undo_steps.push((self.cursor.clone(), old));
+                            self.undo_steps.push(UndoOp::step(&self.cursor, old));
                             self.move_cursor(Movement::Right(1));
                         }
                     }
@@ -111,6 +184,19 @@ impl AppState {
                         Exit => {
                             self.sel_start = None;
                             self.edit_state = EditorState::default();
+                        }
+                        Copy => {
+                            if let Some(sel_start) = &self.sel_start {
+                                let sel = Selection::from(&self.cursor, &sel_start);
+                                let data = self.snrkl.copy_selection(&sel);
+                                self.clipboard = Some(data);
+                            }
+                        }
+                        Paste => {
+                            if let Some(data) = &self.clipboard {
+                                let undo = self.snrkl.paste_selection(&self.cursor, &data);
+                                self.undo_steps.push(undo);
+                            }
                         }
                         Move(movement) => {
                             if self.sel_start.is_none() {

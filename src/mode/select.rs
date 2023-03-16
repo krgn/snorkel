@@ -57,6 +57,8 @@ impl SelectKeymap {
             (KeyCode::Char('K'), KeyModifiers::SHIFT) => {
                 Some(SelectModeCommand::Move(Movement::Up(FAST_MOVE)))
             }
+            (KeyCode::Char('y'), KeyModifiers::NONE) => Some(SelectModeCommand::Copy),
+            (KeyCode::Char('p'), KeyModifiers::NONE) => Some(SelectModeCommand::Paste),
             _ => None,
         }
     }
@@ -69,5 +71,7 @@ impl SelectKeymap {
 #[derive(Debug)]
 pub enum SelectModeCommand {
     Move(Movement),
+    Copy,
+    Paste,
     Exit,
 }

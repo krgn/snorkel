@@ -8,6 +8,7 @@ pub enum NormalModeCommand {
     Delete,
     Undo,
     Redo,
+    Paste,
     Move(Movement),
     EnterInsertMode,
     EnterReplaceMode,
@@ -104,10 +105,21 @@ impl NormalKeymap {
         }
     }
 
+    pub fn other(ev: KeyEvent) -> Option<NormalModeCommand> {
+        let code = ev.code;
+        let modi = ev.modifiers;
+
+        match (code, modi) {
+            (KeyCode::Char('p'), KeyModifiers::NONE) => Some(NormalModeCommand::Paste),
+            _ => None,
+        }
+    }
+
     pub fn parse_key(ev: KeyEvent) -> Option<NormalModeCommand> {
-        NormalKeymap::edit_state(ev)
-            .or_else(|| NormalKeymap::movement(ev))
-            .or_else(|| NormalKeymap::commands(ev))
-            .or_else(|| NormalKeymap::exit(ev))
+        Self::edit_state(ev)
+            .or_else(|| Self::movement(ev))
+            .or_else(|| Self::commands(ev))
+            .or_else(|| Self::exit(ev))
+            .or_else(|| Self::other(ev))
     }
 }
