@@ -4,7 +4,7 @@ use crate::mode::{
     ReplaceModeCommand, SelectKeymap, SelectModeCommand,
 };
 use crate::op::Op;
-use crate::snrkl::Snrkl;
+use crate::snorkel::Snorkel;
 use crate::util::{Coord, Selection};
 use crossterm::event::{KeyCode, KeyEvent};
 use std::cmp;
@@ -58,7 +58,7 @@ pub struct AppState {
     pub redo_steps: Vec<UndoOp>,
     pub clipboard: Option<Vec<Vec<Option<Op>>>>,
     pub sel_start: Option<Coord>,
-    pub snrkl: Snrkl,
+    pub snrkl: Snorkel,
     pub config: Config,
 }
 
@@ -71,7 +71,7 @@ impl AppState {
             edit_state: EditorState::default(),
             redo_steps: Vec::new(),
             sel_start: None,
-            snrkl: Snrkl::new(rows, cols),
+            snrkl: Snorkel::new(rows, cols),
             undo_steps: Vec::new(),
         }
     }

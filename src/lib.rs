@@ -11,7 +11,7 @@ pub mod config;
 pub mod mode;
 pub mod op;
 pub mod simple_loop;
-pub mod snrkl;
+pub mod snorkel;
 pub mod state;
 pub mod timerfd;
 pub mod ui;

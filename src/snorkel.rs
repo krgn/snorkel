@@ -6,20 +6,20 @@ use crate::{
     util::{Coord, Selection},
 };
 
-pub struct Snrkl {
+pub struct Snorkel {
     pub rows: usize,
     pub cols: usize,
     data: Vec<Vec<Option<Op>>>,
 }
 
-impl Snrkl {
-    pub fn new(rows: usize, cols: usize) -> Snrkl {
+impl Snorkel {
+    pub fn new(rows: usize, cols: usize) -> Snorkel {
         let mut data = Vec::with_capacity(rows);
         for _ in 0..rows {
             data.push(vec![None; cols]);
         }
         assert_eq!(data.len(), rows);
-        Snrkl { rows, cols, data }
+        Snorkel { rows, cols, data }
     }
 
     pub fn copy_selection(&self, sel: &Selection) -> Vec<Vec<Option<Op>>> {
@@ -136,13 +136,13 @@ impl Snrkl {
 mod copy_paste_tests {
     use crate::{
         op::Op,
-        snrkl::Snrkl,
+        snorkel::Snorkel,
         util::{Coord, Selection},
     };
 
     #[test]
     fn should_copy_selection() {
-        let mut snrkl = Snrkl::new(4, 20);
+        let mut snrkl = Snorkel::new(4, 20);
         snrkl.set_cell(&Coord { x: 1, y: 1 }, Op::Add);
         snrkl.set_cell(&Coord { x: 2, y: 2 }, Op::Clock);
 
@@ -183,7 +183,7 @@ mod copy_paste_tests {
         ];
         let target = Coord { x: 1, y: 2 };
 
-        let mut snrkl = Snrkl::new(4, 20);
+        let mut snrkl = Snorkel::new(4, 20);
         snrkl.paste_selection(&target, &selection);
         let rendered = snrkl.render();
         let expected = r#"
@@ -203,7 +203,7 @@ mod copy_paste_tests {
         ];
         let target = Coord { x: 1, y: 2 };
 
-        let mut snrkl = Snrkl::new(3, 3);
+        let mut snrkl = Snorkel::new(3, 3);
         snrkl.paste_selection(&target, &selection);
         let rendered = snrkl.render();
         let expected = r#"
@@ -219,11 +219,11 @@ mod copy_paste_tests {
 mod tests {
     use crate::{op::Op, util::Coord};
 
-    use super::Snrkl;
+    use super::Snorkel;
 
     #[test]
     fn create_new_snrkl_renders_correctly() {
-        let snrkl = Snrkl::new(4, 20);
+        let snrkl = Snorkel::new(4, 20);
         let rendered = snrkl.render();
         let expected = r#"
 ····················
@@ -236,7 +236,7 @@ mod tests {
 
     #[test]
     fn process_op_should_work_correctly() {
-        let mut snrkl = Snrkl::new(4, 20);
+        let mut snrkl = Snorkel::new(4, 20);
         let rendered = snrkl.render();
         let expected = r#"
 ····················
@@ -261,7 +261,7 @@ mod tests {
 
     #[test]
     fn resize_should_work() {
-        let mut snrkl = Snrkl::new(4, 4);
+        let mut snrkl = Snorkel::new(4, 4);
         snrkl.set_cell(&Coord { x: 1, y: 1 }, Op::Add);
         snrkl.set_cell(&Coord { x: 2, y: 2 }, Op::Clock);
         let rendered = snrkl.render();
