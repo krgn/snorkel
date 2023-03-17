@@ -1,7 +1,6 @@
 ## TODO
 
 * compute next state on tick (i.e. implement commands)
-  - `A` add(a b): Outputs sum of inputs.
   - `B` subtract(a b): Outputs difference of inputs.
   - `C` clock(rate mod): Outputs modulo of frame.
   - `D` delay(rate mod): Bangs on modulo of frame.

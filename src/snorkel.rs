@@ -13,6 +13,9 @@ pub struct Snorkel {
 }
 
 impl Snorkel {
+    // ░█▀█░█▀▀░█░█
+    // ░█░█░█▀▀░█▄█
+    // ░▀░▀░▀▀▀░▀░▀
     pub fn new(rows: usize, cols: usize) -> Snorkel {
         let mut data = Vec::with_capacity(rows);
         for _ in 0..rows {
@@ -22,6 +25,31 @@ impl Snorkel {
         Snorkel { rows, cols, data }
     }
 
+    // ░▀█▀░▀█▀░█▀▀░█░█
+    // ░░█░░░█░░█░░░█▀▄
+    // ░░▀░░▀▀▀░▀▀▀░▀░▀
+    pub fn tick(&mut self) {
+        let mut coord = Coord { x: 0, y: 0 };
+        for y in 0..self.rows {
+            for x in 0..self.cols {
+                coord.x = x;
+                coord.y = y;
+                match self.get_cell(&coord) {
+                    Some(Op::Add) => {
+                        if let Some(result) = self.op_add(&coord) {
+                            coord.y += 1;
+                            let _ignored = self.set_cell(&coord, result);
+                        }
+                    }
+                    _ => (),
+                }
+            }
+        }
+    }
+
+    // ░█▀▀░█▀█░█▀█░█░█
+    // ░█░░░█░█░█▀▀░░█░
+    // ░▀▀▀░▀▀▀░▀░░░░▀░
     pub fn copy_selection(&self, sel: &Selection) -> Vec<Vec<Option<Op>>> {
         let mut out = vec![];
         for y in sel.start_y..sel.end_y + 1 {
@@ -35,6 +63,9 @@ impl Snorkel {
         out
     }
 
+    // ░█▀█░█▀█░█▀▀░▀█▀░█▀▀
+    // ░█▀▀░█▀█░▀▀█░░█░░█▀▀
+    // ░▀░░░▀░▀░▀▀▀░░▀░░▀▀▀
     pub fn paste_selection(&mut self, loc: &Coord, selection: &Vec<Vec<Option<Op>>>) -> UndoOp {
         let mut undo_ops = vec![];
         'outer: for y in 0..selection.len() {
@@ -112,6 +143,53 @@ impl Snorkel {
         self.rows = y;
     }
 
+    // ░█▀█░█▀█░█▀▀
+    // ░█░█░█▀▀░▀▀█
+    // ░▀▀▀░▀░░░▀▀▀
+
+    fn op_add(&self, loc: &Coord) -> Option<Op> {
+        let left = self.left_of(loc, 1);
+        let right = self.right_of(loc, 1);
+        match (left, right) {
+            (Some(lhs), Some(rhs)) => Op::add(lhs, rhs),
+            _ => None,
+        }
+    }
+
+    // ░█░█░▀█▀░▀█▀░█░░
+    // ░█░█░░█░░░█░░█░░
+    // ░▀▀▀░░▀░░▀▀▀░▀▀▀
+
+    fn left_of(&self, loc: &Coord, offset: usize) -> Option<Op> {
+        let left_x = loc.x.checked_sub(offset);
+        if left_x.is_none() {
+            return None;
+        }
+        let left_loc = Coord {
+            x: left_x.unwrap(),
+            y: loc.y,
+        };
+        self.get_cell(&left_loc)
+    }
+
+    fn right_of(&self, loc: &Coord, offset: usize) -> Option<Op> {
+        let right_x = loc.x.checked_add(offset).and_then(|result| {
+            if result >= self.cols {
+                None
+            } else {
+                Some(result)
+            }
+        });
+        if right_x.is_none() {
+            return None;
+        }
+        let right_loc = Coord {
+            x: right_x.unwrap(),
+            y: loc.y,
+        };
+        self.get_cell(&right_loc)
+    }
+
     // Only used in tests.
     #[cfg(test)]
     pub fn render(&self) -> String {
@@ -131,6 +209,32 @@ impl Snorkel {
         out
     }
 }
+
+// ░▀█▀░▀█▀░█▀▀░█░█
+// ░░█░░░█░░█░░░█▀▄
+// ░░▀░░▀▀▀░▀▀▀░▀░▀ tests
+
+#[cfg(test)]
+mod tick_tests {
+    use crate::{op::Op, util::Coord};
+
+    use super::Snorkel;
+
+    #[test]
+    fn complete_add_should_do_produce_correct_result() {
+        let mut snrkl = Snorkel::new(5, 5);
+        snrkl.set_cell(&Coord { x: 0, y: 0 }, Op::Val('1'));
+        snrkl.set_cell(&Coord { x: 1, y: 0 }, Op::Add);
+        snrkl.set_cell(&Coord { x: 2, y: 0 }, Op::Val('1'));
+        assert_eq!(None, snrkl.get_cell(&Coord { x: 1, y: 1 }));
+        snrkl.tick();
+        assert_eq!(Some(Op::Val('2')), snrkl.get_cell(&Coord { x: 1, y: 1 }));
+    }
+}
+
+// ░█▀▀░█▀█░█▀█░█░█░░░█░█▀█░█▀█░█▀▀░▀█▀░█▀▀
+// ░█░░░█░█░█▀▀░░█░░▄▀░░█▀▀░█▀█░▀▀█░░█░░█▀▀
+// ░▀▀▀░▀▀▀░▀░░░░▀░░▀░░░▀░░░▀░▀░▀▀▀░░▀░░▀▀▀ tests
 
 #[cfg(test)]
 mod copy_paste_tests {
