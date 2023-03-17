@@ -169,7 +169,14 @@ impl Op {
         }
     }
 
-    pub fn is_capital(value: char) -> bool {
+    fn is_captial_char(&self) -> bool {
+        match self {
+            Op::Val(c) => Self::is_capital(*c),
+            _ => false,
+        }
+    }
+
+    fn is_capital(value: char) -> bool {
         match value {
             'A' | 'B' | 'C' | 'D' | 'E' | 'F' | 'G' | 'H' | 'I' | 'J' | 'K' | 'L' | 'M' | 'N'
             | 'O' | 'P' | 'Q' | 'R' | 'S' | 'T' | 'U' | 'V' | 'W' | 'X' | 'Y' | 'Z' => true,
@@ -177,28 +184,56 @@ impl Op {
         }
     }
 
+    fn extract_num(&self) -> Option<usize> {
+        use Op::*;
+        let chr = if let Val(c) = self {
+            *c
+        } else {
+            return None;
+        };
+        Self::as_num(chr)
+    }
+
     pub fn add(lhs: Op, rhs: Op) -> Option<Op> {
         use Op::*;
 
-        // parse chars
-        let (lhs_chr, rhs_chr) = if let (Val(lhs), Val(rhs)) = (lhs, rhs) {
-            (lhs, rhs)
+        let lhs_num = if let Some(n) = lhs.extract_num() {
+            n
         } else {
             return None;
         };
 
-        // parse num
-        let (lhs_num, rhs_num) =
-            if let (Some(lhs), Some(rhs)) = (Self::as_num(lhs_chr), Self::as_num(rhs_chr)) {
-                (lhs, rhs)
-            } else {
-                return None;
-            };
+        let rhs_num = if let Some(n) = rhs.extract_num() {
+            n
+        } else {
+            return None;
+        };
 
         // perform addition
         Some(Val(Self::to_char(
             lhs_num.wrapping_add(rhs_num),
-            Self::is_capital(rhs_chr),
+            rhs.is_captial_char(),
+        )))
+    }
+
+    pub fn sub(lhs: Op, rhs: Op) -> Option<Op> {
+        use Op::*;
+
+        let lhs_num = if let Some(n) = lhs.extract_num() {
+            n
+        } else {
+            return None;
+        };
+
+        let rhs_num = if let Some(n) = rhs.extract_num() {
+            n
+        } else {
+            return None;
+        };
+
+        Some(Val(Self::to_char(
+            lhs_num.wrapping_sub(rhs_num),
+            rhs.is_captial_char(),
         )))
     }
 

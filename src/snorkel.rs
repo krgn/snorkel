@@ -41,6 +41,12 @@ impl Snorkel {
                             let _ignored = self.set_cell(&coord, result);
                         }
                     }
+                    Some(Op::Sub) => {
+                        if let Some(result) = self.op_sub(&coord) {
+                            coord.y += 1;
+                            let _ignored = self.set_cell(&coord, result);
+                        }
+                    }
                     _ => (),
                 }
             }
@@ -156,6 +162,15 @@ impl Snorkel {
         }
     }
 
+    fn op_sub(&self, loc: &Coord) -> Option<Op> {
+        let left = self.left_of(loc, 1);
+        let right = self.right_of(loc, 1);
+        match (left, right) {
+            (Some(lhs), Some(rhs)) => Op::sub(lhs, rhs),
+            _ => None,
+        }
+    }
+
     // ░█░█░▀█▀░▀█▀░█░░
     // ░█░█░░█░░░█░░█░░
     // ░▀▀▀░░▀░░▀▀▀░▀▀▀
@@ -229,6 +244,17 @@ mod tick_tests {
         assert_eq!(None, snrkl.get_cell(&Coord { x: 1, y: 1 }));
         snrkl.tick();
         assert_eq!(Some(Op::Val('2')), snrkl.get_cell(&Coord { x: 1, y: 1 }));
+    }
+
+    #[test]
+    fn complete_sub_should_do_produce_correct_result() {
+        let mut snrkl = Snorkel::new(5, 5);
+        snrkl.set_cell(&Coord { x: 0, y: 0 }, Op::Val('2'));
+        snrkl.set_cell(&Coord { x: 1, y: 0 }, Op::Sub);
+        snrkl.set_cell(&Coord { x: 2, y: 0 }, Op::Val('1'));
+        assert_eq!(None, snrkl.get_cell(&Coord { x: 1, y: 1 }));
+        snrkl.tick();
+        assert_eq!(Some(Op::Val('1')), snrkl.get_cell(&Coord { x: 1, y: 1 }));
     }
 }
 
