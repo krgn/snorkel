@@ -216,6 +216,10 @@ impl AppState {
         }
     }
 
+    pub fn tick(&mut self) {
+        self.snrkl.tick()
+    }
+
     pub fn move_cursor(&mut self, mov: Movement) {
         let x = self.cursor.x;
         let y = self.cursor.y;

@@ -25,23 +25,25 @@ impl Default for CharConfig {
 
 #[derive(Debug)]
 pub struct StyleConfig {
-    pub normal_text: Style,
+    pub normal: Style,
     pub comment: Style,
     pub command: Style,
     pub value: Style,
     pub selection: Style,
     pub cursor: Style,
+    pub result: Style,
 }
 
 impl Default for StyleConfig {
     fn default() -> Self {
         StyleConfig {
-            normal_text: Style::default().fg(DARK_GREY),
+            normal: Style::default().fg(DARK_GREY),
             comment: Style::default().fg(Color::Black).bg(Color::DarkGray),
             command: Style::default().fg(Color::Black).bg(Color::Cyan),
             value: Style::default().fg(Color::White),
             selection: Style::default().fg(Color::Black).bg(Color::Magenta),
             cursor: Style::default().bg(Color::Yellow).fg(Color::Black),
+            result: Style::default().bg(Color::White).fg(Color::Black),
         }
     }
 }

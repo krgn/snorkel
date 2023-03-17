@@ -41,14 +41,15 @@ pub fn render(state: &AppState) -> Paragraph {
                 let is_comment = op.is_comment();
                 let is_primop = op.is_primop();
                 let is_value = op.is_value();
+                let is_result = op.is_result();
 
-                let c: char = op.into();
+                let c: char = op.as_char(&chars);
 
                 // ░█▀▀░█▀▀░█░░░█▀▀░█▀▀░▀█▀░▀█▀░█▀█░█▀█
                 // ░▀▀█░█▀▀░█░░░█▀▀░█░░░░█░░░█░░█░█░█░█
                 // ░▀▀▀░▀▀▀░▀▀▀░▀▀▀░▀▀▀░░▀░░▀▀▀░▀▀▀░▀░▀
                 if select_mode && in_sel_area(&selection, &point) && !in_selection {
-                    spn.push(Span::styled(frag, styles.normal_text));
+                    spn.push(Span::styled(frag, styles.normal));
                     spn.push(Span::styled(c.to_string(), styles.cursor));
                     in_selection = true;
                     frag = String::new();
@@ -69,7 +70,7 @@ pub fn render(state: &AppState) -> Paragraph {
                     in_comment = false;
                     frag = String::new();
                 } else if is_cursor && is_comment && !in_comment {
-                    spn.push(Span::styled(frag, styles.normal_text));
+                    spn.push(Span::styled(frag, styles.normal));
                     spn.push(Span::styled(c.to_string(), styles.cursor));
                     in_comment = true;
                     frag = String::new();
@@ -77,7 +78,7 @@ pub fn render(state: &AppState) -> Paragraph {
                     let style = if in_comment {
                         styles.comment
                     } else {
-                        styles.normal_text
+                        styles.normal
                     };
                     spn.push(Span::styled(frag, style));
                     spn.push(Span::styled(c.to_string(), styles.cursor));
@@ -88,7 +89,7 @@ pub fn render(state: &AppState) -> Paragraph {
                 // ░▀▀▀░▀▀▀░▀░▀░▀░▀░▀▀▀░▀░▀░░▀░
                 else if is_comment && !in_comment {
                     in_comment = true;
-                    spn.push(Span::styled(frag, styles.normal_text));
+                    spn.push(Span::styled(frag, styles.normal));
                     spn.push(Span::styled(c.to_string(), styles.comment));
                     frag = String::new();
                 } else if is_comment && in_comment {
@@ -101,17 +102,27 @@ pub fn render(state: &AppState) -> Paragraph {
                 // ░█░░░█░█░█░█░█░█░█▀█░█░█░█░█░▀▀█
                 // ░▀▀▀░▀▀▀░▀░▀░▀░▀░▀░▀░▀░▀░▀▀░░▀▀▀
                 else if is_primop && !in_comment {
-                    spn.push(Span::styled(frag, styles.normal_text));
+                    spn.push(Span::styled(frag, styles.normal));
                     spn.push(Span::styled(c.to_string(), styles.command));
                     frag = String::new();
                 } else if is_primop && in_comment {
+                    frag.push(c)
+                }
+                // ░█▀▄░█▀▀░█▀▀░█░█░█░░░▀█▀
+                // ░█▀▄░█▀▀░▀▀█░█░█░█░░░░█░
+                // ░▀░▀░▀▀▀░▀▀▀░▀▀▀░▀▀▀░░▀░
+                else if is_result && !in_comment {
+                    spn.push(Span::styled(frag, styles.normal));
+                    spn.push(Span::styled(c.to_string(), styles.result));
+                    frag = String::new();
+                } else if is_result && in_comment {
                     frag.push(c)
                 }
                 // ░█░█░█▀█░█░░░█░█░█▀▀░█▀▀
                 // ░▀▄▀░█▀█░█░░░█░█░█▀▀░▀▀█
                 // ░░▀░░▀░▀░▀▀▀░▀▀▀░▀▀▀░▀▀▀
                 else if is_value && !in_comment {
-                    spn.push(Span::styled(frag, styles.normal_text));
+                    spn.push(Span::styled(frag, styles.normal));
                     spn.push(Span::styled(c.to_string(), styles.value));
                     frag = String::new();
                 } else if is_value && in_comment {
@@ -122,7 +133,7 @@ pub fn render(state: &AppState) -> Paragraph {
             } else {
                 let c = chars.empty;
                 if select_mode && in_sel_area(&selection, &point) && !in_selection {
-                    spn.push(Span::styled(frag, styles.normal_text));
+                    spn.push(Span::styled(frag, styles.normal));
                     in_selection = true;
                     frag = String::new();
                     frag.push(c)
@@ -137,7 +148,7 @@ pub fn render(state: &AppState) -> Paragraph {
                     let style = if in_comment {
                         styles.comment
                     } else {
-                        styles.normal_text
+                        styles.normal
                     };
                     spn.push(Span::styled(frag, style));
                     spn.push(Span::styled(c.to_string(), styles.cursor));
@@ -151,7 +162,7 @@ pub fn render(state: &AppState) -> Paragraph {
         if in_comment {
             spn.push(Span::styled(frag, styles.comment));
         } else {
-            spn.push(Span::styled(frag, styles.normal_text));
+            spn.push(Span::styled(frag, styles.normal));
         }
         text.push(Spans::from(spn))
     }

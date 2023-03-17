@@ -1,3 +1,5 @@
+use crate::config::CharConfig;
+
 #[derive(Copy, Clone, Debug, Eq, PartialEq, PartialOrd, Ord)]
 pub enum Op {
     Add,
@@ -28,6 +30,8 @@ pub enum Op {
     West,
     Write,
     Ymp,
+    EmptyResult,
+    Result(char),
 }
 
 impl Op {
@@ -101,7 +105,7 @@ impl Op {
         }
     }
 
-    pub fn to_char(value: usize, is_cap: bool) -> char {
+    pub fn as_value_char(value: usize, is_cap: bool) -> char {
         match value % 36 {
             0 => '0',
             1 => '1',
@@ -186,10 +190,12 @@ impl Op {
 
     fn extract_num(&self) -> Option<usize> {
         use Op::*;
-        let chr = if let Val(c) = self {
-            *c
-        } else {
-            return None;
+        let chr = match self {
+            Val(c) => *c,
+            Result(c) => *c,
+            _ => {
+                return None;
+            }
         };
         Self::as_num(chr)
     }
@@ -210,7 +216,7 @@ impl Op {
         };
 
         // perform addition
-        Some(Val(Self::to_char(
+        Some(Result(Self::as_value_char(
             lhs_num.wrapping_add(rhs_num),
             rhs.is_captial_char(),
         )))
@@ -231,7 +237,7 @@ impl Op {
             return None;
         };
 
-        Some(Val(Self::to_char(
+        Some(Result(Self::as_value_char(
             lhs_num.wrapping_sub(rhs_num),
             rhs.is_captial_char(),
         )))
@@ -277,7 +283,7 @@ impl Op {
 
     pub fn is_primop(&self) -> bool {
         match self {
-            Op::Bang | Op::Comment | Op::Val(_) => false,
+            Op::Bang | Op::Comment | Op::Val(_) | Op::Result(_) | Op::EmptyResult => false,
             _ => true,
         }
     }
@@ -295,18 +301,16 @@ impl Op {
             _ => false,
         }
     }
-}
 
-impl From<&Op> for String {
-    fn from(value: &Op) -> Self {
-        let c: char = value.into();
-        c.to_string()
+    pub fn is_result(&self) -> bool {
+        match self {
+            Op::EmptyResult | Op::Result(_) | Op::Bang => true,
+            _ => false,
+        }
     }
-}
 
-impl From<&Op> for char {
-    fn from(value: &Op) -> Self {
-        match value {
+    pub fn as_char(&self, cfg: &CharConfig) -> char {
+        match self {
             Op::Add => 'A',
             Op::Bang => '*',
             Op::Clock => 'C',
@@ -335,6 +339,8 @@ impl From<&Op> for char {
             Op::West => 'W',
             Op::Write => 'X',
             Op::Ymp => 'Y',
+            Op::Result(c) => *c,
+            Op::EmptyResult => cfg.empty,
         }
     }
 }

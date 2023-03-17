@@ -47,6 +47,12 @@ impl Snorkel {
                             let _ignored = self.set_cell(&coord, result);
                         }
                     }
+                    Some(Op::If) => {
+                        if let Some(result) = self.op_if(&coord) {
+                            coord.y += 1;
+                            let _ignored = self.set_cell(&coord, result);
+                        }
+                    }
                     _ => (),
                 }
             }
@@ -158,7 +164,13 @@ impl Snorkel {
         let right = self.right_of(loc, 1);
         match (left, right) {
             (Some(lhs), Some(rhs)) => Op::add(lhs, rhs),
-            _ => None,
+            (Some(Op::Val(c)), None) => Some(Op::Result(c)),
+            (Some(Op::Result(c)), None) => Some(Op::Result(c)),
+            (Some(Op::EmptyResult), None) => Some(Op::Result('0')),
+            (None, Some(Op::Val(c))) => Some(Op::Result(c)),
+            (None, Some(Op::Result(c))) => Some(Op::Result(c)),
+            (None, Some(Op::EmptyResult)) => Some(Op::Result('0')),
+            _ => Some(Op::Result('0')),
         }
     }
 
@@ -167,7 +179,25 @@ impl Snorkel {
         let right = self.right_of(loc, 1);
         match (left, right) {
             (Some(lhs), Some(rhs)) => Op::sub(lhs, rhs),
-            _ => None,
+            (Some(Op::Val(c)), None) => Some(Op::Result(c)),
+            (Some(Op::Result(c)), None) => Some(Op::Result(c)),
+            (Some(Op::EmptyResult), None) => Some(Op::Result('0')),
+            (None, Some(Op::Val(c))) => Some(Op::Result(c)),
+            (None, Some(Op::Result(c))) => Some(Op::Result(c)),
+            (None, Some(Op::EmptyResult)) => Some(Op::Result('0')),
+            _ => Some(Op::Result('0')),
+        }
+    }
+
+    fn op_if(&self, loc: &Coord) -> Option<Op> {
+        let left = self.left_of(loc, 1);
+        let right = self.right_of(loc, 1);
+        match (left, right) {
+            (Some(lhs), Some(rhs)) if lhs == rhs => Some(Op::Bang),
+            (Some(_), Some(_)) => Some(Op::EmptyResult),
+            (Some(_), None) => Some(Op::EmptyResult),
+            (None, Some(_)) => Some(Op::EmptyResult),
+            (None, None) => Some(Op::Bang),
         }
     }
 
@@ -214,7 +244,7 @@ impl Snorkel {
         for row in 0..self.rows {
             for col in 0..self.cols {
                 if let Some(op) = &self.data[row][col] {
-                    out.push(op.into());
+                    out.push(op.as_char(&chars));
                 } else {
                     out.push(chars.empty);
                 }
@@ -235,6 +265,8 @@ mod tick_tests {
 
     use super::Snorkel;
 
+    // Addition
+
     #[test]
     fn complete_add_should_do_produce_correct_result() {
         let mut snrkl = Snorkel::new(5, 5);
@@ -243,8 +275,39 @@ mod tick_tests {
         snrkl.set_cell(&Coord { x: 2, y: 0 }, Op::Val('1'));
         assert_eq!(None, snrkl.get_cell(&Coord { x: 1, y: 1 }));
         snrkl.tick();
-        assert_eq!(Some(Op::Val('2')), snrkl.get_cell(&Coord { x: 1, y: 1 }));
+        assert_eq!(Some(Op::Result('2')), snrkl.get_cell(&Coord { x: 1, y: 1 }));
     }
+
+    #[test]
+    fn incomplete_add_should_do_produce_correct_result() {
+        let mut snrkl = Snorkel::new(5, 5);
+        snrkl.set_cell(&Coord { x: 1, y: 0 }, Op::Add);
+        assert_eq!(None, snrkl.get_cell(&Coord { x: 1, y: 1 }));
+        snrkl.tick();
+        assert_eq!(Some(Op::Result('0')), snrkl.get_cell(&Coord { x: 1, y: 1 }));
+    }
+
+    #[test]
+    fn add_with_rhs_only_should_do_produce_correct_result() {
+        let mut snrkl = Snorkel::new(5, 5);
+        snrkl.set_cell(&Coord { x: 1, y: 0 }, Op::Add);
+        snrkl.set_cell(&Coord { x: 2, y: 0 }, Op::Val('1'));
+        assert_eq!(None, snrkl.get_cell(&Coord { x: 1, y: 1 }));
+        snrkl.tick();
+        assert_eq!(Some(Op::Result('1')), snrkl.get_cell(&Coord { x: 1, y: 1 }));
+    }
+
+    #[test]
+    fn add_with_lhs_only_should_do_produce_correct_result() {
+        let mut snrkl = Snorkel::new(5, 5);
+        snrkl.set_cell(&Coord { x: 0, y: 0 }, Op::Val('1'));
+        snrkl.set_cell(&Coord { x: 1, y: 0 }, Op::Add);
+        assert_eq!(None, snrkl.get_cell(&Coord { x: 1, y: 1 }));
+        snrkl.tick();
+        assert_eq!(Some(Op::Result('1')), snrkl.get_cell(&Coord { x: 1, y: 1 }));
+    }
+
+    // Subtraction
 
     #[test]
     fn complete_sub_should_do_produce_correct_result() {
@@ -254,7 +317,68 @@ mod tick_tests {
         snrkl.set_cell(&Coord { x: 2, y: 0 }, Op::Val('1'));
         assert_eq!(None, snrkl.get_cell(&Coord { x: 1, y: 1 }));
         snrkl.tick();
-        assert_eq!(Some(Op::Val('1')), snrkl.get_cell(&Coord { x: 1, y: 1 }));
+        assert_eq!(Some(Op::Result('1')), snrkl.get_cell(&Coord { x: 1, y: 1 }));
+    }
+
+    #[test]
+    fn incomplete_sub_should_do_produce_correct_result() {
+        let mut snrkl = Snorkel::new(5, 5);
+        snrkl.set_cell(&Coord { x: 1, y: 0 }, Op::Sub);
+        assert_eq!(None, snrkl.get_cell(&Coord { x: 1, y: 1 }));
+        snrkl.tick();
+        assert_eq!(Some(Op::Result('0')), snrkl.get_cell(&Coord { x: 1, y: 1 }));
+    }
+
+    #[test]
+    fn sub_with_lhs_only_should_do_produce_correct_result() {
+        let mut snrkl = Snorkel::new(5, 5);
+        snrkl.set_cell(&Coord { x: 0, y: 0 }, Op::Val('2'));
+        snrkl.set_cell(&Coord { x: 1, y: 0 }, Op::Sub);
+        assert_eq!(None, snrkl.get_cell(&Coord { x: 1, y: 1 }));
+        snrkl.tick();
+        assert_eq!(Some(Op::Result('2')), snrkl.get_cell(&Coord { x: 1, y: 1 }));
+    }
+
+    #[test]
+    fn sub_with_rhs_only_should_do_produce_correct_result() {
+        let mut snrkl = Snorkel::new(5, 5);
+        snrkl.set_cell(&Coord { x: 1, y: 0 }, Op::Sub);
+        snrkl.set_cell(&Coord { x: 2, y: 0 }, Op::Val('2'));
+        assert_eq!(None, snrkl.get_cell(&Coord { x: 1, y: 1 }));
+        snrkl.tick();
+        assert_eq!(Some(Op::Result('2')), snrkl.get_cell(&Coord { x: 1, y: 1 }));
+    }
+
+    // If...
+    #[test]
+    fn complete_equal_if_expression_should_produce_correct_result() {
+        let mut snrkl = Snorkel::new(5, 5);
+        snrkl.set_cell(&Coord { x: 0, y: 0 }, Op::Val('1'));
+        snrkl.set_cell(&Coord { x: 1, y: 0 }, Op::If);
+        snrkl.set_cell(&Coord { x: 2, y: 0 }, Op::Val('1'));
+        assert_eq!(None, snrkl.get_cell(&Coord { x: 1, y: 1 }));
+        snrkl.tick();
+        assert_eq!(Some(Op::Bang), snrkl.get_cell(&Coord { x: 1, y: 1 }));
+    }
+
+    #[test]
+    fn complete_inequal_if_expression_should_produce_correct_result() {
+        let mut snrkl = Snorkel::new(5, 5);
+        snrkl.set_cell(&Coord { x: 0, y: 0 }, Op::Val('1'));
+        snrkl.set_cell(&Coord { x: 1, y: 0 }, Op::If);
+        snrkl.set_cell(&Coord { x: 2, y: 0 }, Op::Val('2'));
+        assert_eq!(None, snrkl.get_cell(&Coord { x: 1, y: 1 }));
+        snrkl.tick();
+        assert_eq!(Some(Op::EmptyResult), snrkl.get_cell(&Coord { x: 1, y: 1 }));
+    }
+
+    #[test]
+    fn incomplete_equal_if_expression_should_produce_correct_result() {
+        let mut snrkl = Snorkel::new(5, 5);
+        snrkl.set_cell(&Coord { x: 1, y: 0 }, Op::If);
+        assert_eq!(None, snrkl.get_cell(&Coord { x: 1, y: 1 }));
+        snrkl.tick();
+        assert_eq!(Some(Op::Bang), snrkl.get_cell(&Coord { x: 1, y: 1 }));
     }
 }
 
