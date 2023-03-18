@@ -14,8 +14,8 @@ fn full_layout(size: Rect) -> Vec<Rect> {
         .direction(layout::Direction::Vertical)
         .constraints(
             [
-                layout::Constraint::Max(4),
-                layout::Constraint::Percentage(80),
+                layout::Constraint::Min(4),
+                layout::Constraint::Percentage(90),
                 layout::Constraint::Percentage(10),
             ]
             .as_ref(),
@@ -28,8 +28,8 @@ fn minimal_layout(size: Rect) -> Vec<Rect> {
         .direction(layout::Direction::Vertical)
         .constraints(
             [
-                layout::Constraint::Max(4),
-                layout::Constraint::Percentage(90),
+                layout::Constraint::Min(4),
+                layout::Constraint::Percentage(100),
             ]
             .as_ref(),
         )

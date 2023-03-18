@@ -10,7 +10,11 @@ use std::io;
 use tui::{backend::Backend, Terminal};
 
 fn ui_loop<B: Backend>(terminal: &mut Terminal<B>) -> io::Result<()> {
-    let mut state = state::AppState::new(20, 80);
+    let size = terminal.get_frame().size();
+    let rows = (size.height - 6) as usize;
+    let cols = (size.width - 10) as usize;
+    let mut state = state::AppState::new(rows, cols);
+
     loop {
         if state.edit_state == EditorState::QuitConfirmed {
             return Ok(());

@@ -1,11 +1,12 @@
 use crate::state::{AppState, EditorState};
 use tui::{
+    layout::Constraint,
     style::{Color, Style},
-    text::{Span, Spans},
-    widgets::{Block, Borders, Paragraph},
+    text::Span,
+    widgets::{Block, Borders, Cell, Row, Table},
 };
 
-pub fn render(state: &AppState) -> Paragraph {
+pub fn render(state: &AppState) -> Table {
     let editor_state = match &state.edit_state {
         EditorState::Normal => Span::styled(
             "normal",
@@ -32,13 +33,32 @@ pub fn render(state: &AppState) -> Paragraph {
         }
     };
 
-    let items = vec![
-        Spans::from(vec![Span::raw("state: "), editor_state]),
-        Spans::from(vec![
-            Span::raw("frame: "),
-            Span::raw(state.snrkl.frame.to_string()),
+    let grid = format!("{}x{}", state.snrkl.cols, state.snrkl.rows);
+    let pos = format!("{},{}", state.cursor.x, state.cursor.y);
+    let frame = format!("{}f", state.snrkl.frame);
+
+    let rows = vec![
+        Row::new(vec![
+            Cell::from(grid),
+            Cell::from(frame),
+            Cell::from(""),
+            Cell::from(""),
+            Cell::from(""),
+        ]),
+        Row::new(vec![
+            Cell::from(pos),
+            Cell::from(editor_state),
+            Cell::from(""),
+            Cell::from(""),
+            Cell::from(""),
         ]),
     ];
 
-    Paragraph::new(items).block(Block::default().borders(Borders::ALL))
+    Table::new(rows)
+        .block(Block::default().borders(Borders::NONE))
+        .widths(&[
+            Constraint::Percentage(10),
+            Constraint::Length(20),
+            Constraint::Min(10),
+        ])
 }

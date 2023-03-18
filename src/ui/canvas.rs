@@ -24,6 +24,11 @@ pub fn render(state: &AppState) -> Paragraph {
     let styles = &state.config.styles;
     let chars = &state.config.chars;
 
+    let max_x = state.snrkl.cols - 1;
+    let max_y = state.snrkl.rows - 1;
+    let grid_x = state.config.grid_steps_x as usize;
+    let grid_y = state.config.grid_steps_y as usize;
+
     let mut text = vec![];
     // go through all rows
     for y in 0..state.snrkl.rows {
@@ -131,7 +136,28 @@ pub fn render(state: &AppState) -> Paragraph {
                     frag.push(c)
                 }
             } else {
-                let c = chars.empty;
+                let c = if x == 0 && y == 0 {
+                    chars.top_left_corner
+                } else if x == max_x && y == 0 {
+                    chars.top_right_corner
+                } else if x == 0 && y == max_y {
+                    chars.bottom_left_corner
+                } else if x == max_x && y == max_y {
+                    chars.bottom_right_corner
+                } else if x != 0 && x != max_x && x % grid_x == 0 && y == 0 {
+                    chars.grid_top_marker
+                } else if x != 0 && x != max_x && x % grid_x == 0 && y == max_y {
+                    chars.grid_bottom_marker
+                } else if x == 0 && x != max_x && y % grid_y == 0 {
+                    chars.grid_line_start
+                } else if x == max_x && y % grid_y == 0 {
+                    chars.grid_line_end
+                } else if x != 0 && x != max_x && x % grid_x == 0 && y % grid_y == 0 {
+                    chars.grid_marker
+                } else {
+                    chars.empty
+                };
+
                 if select_mode && in_sel_area(&selection, &point) && !in_selection {
                     spn.push(Span::styled(frag, styles.normal));
                     in_selection = true;
@@ -167,5 +193,7 @@ pub fn render(state: &AppState) -> Paragraph {
         text.push(Spans::from(spn))
     }
 
-    Paragraph::new(text).block(Block::default().borders(Borders::NONE))
+    Paragraph::new(text)
+        .block(Block::default().borders(Borders::NONE))
+        .alignment(tui::layout::Alignment::Center)
 }

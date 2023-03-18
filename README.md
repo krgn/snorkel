@@ -35,8 +35,6 @@
   - OSC IO
   - UDP IO
 * load/save file
-* grid markers
 * re-size
 * re-grid
 * config file
-* center grid

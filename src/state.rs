@@ -8,6 +8,7 @@ use crate::snorkel::Snorkel;
 use crate::util::{Coord, Selection};
 use crossterm::event::{KeyCode, KeyEvent};
 use std::cmp;
+use std::fmt::Display;
 use std::time::Instant;
 
 #[derive(Default, Debug, Eq, PartialEq, PartialOrd, Ord)]
@@ -19,6 +20,20 @@ pub enum EditorState {
     Select,
     QuitRequested,
     QuitConfirmed,
+}
+
+impl Display for EditorState {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        use EditorState::*;
+        match self {
+            Insert => f.write_str("insert"),
+            Normal => f.write_str("normal"),
+            Replace => f.write_str("replace"),
+            Select => f.write_str("select"),
+            QuitRequested => f.write_str("quit?"),
+            QuitConfirmed => f.write_str("bye"),
+        }
+    }
 }
 
 #[derive(Debug)]

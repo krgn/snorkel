@@ -8,16 +8,26 @@ pub struct CharConfig {
     pub bottom_left_corner: char,
     pub top_right_corner: char,
     pub bottom_right_corner: char,
+    pub grid_line_start: char,
+    pub grid_line_end: char,
+    pub grid_top_marker: char,
+    pub grid_marker: char,
+    pub grid_bottom_marker: char,
     pub empty: char,
 }
 
 impl Default for CharConfig {
     fn default() -> Self {
         Self {
-            top_left_corner: '⌌',
-            top_right_corner: '⌍',
-            bottom_left_corner: '⌎',
-            bottom_right_corner: '⌏',
+            top_left_corner: '┌',
+            top_right_corner: '┐',
+            bottom_left_corner: '└',
+            bottom_right_corner: '┘',
+            grid_line_start: '├',
+            grid_line_end: '┤',
+            grid_top_marker: '┬',
+            grid_marker: '+',
+            grid_bottom_marker: '┴',
             empty: '·',
         }
     }
@@ -48,8 +58,21 @@ impl Default for StyleConfig {
     }
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug)]
 pub struct Config {
     pub styles: StyleConfig,
     pub chars: CharConfig,
+    pub grid_steps_x: u8,
+    pub grid_steps_y: u8,
+}
+
+impl Default for Config {
+    fn default() -> Self {
+        Self {
+            styles: StyleConfig::default(),
+            chars: CharConfig::default(),
+            grid_steps_x: 8,
+            grid_steps_y: 8,
+        }
+    }
 }
