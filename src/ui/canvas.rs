@@ -167,5 +167,5 @@ pub fn render(state: &AppState) -> Paragraph {
         text.push(Spans::from(spn))
     }
 
-    Paragraph::new(text).block(Block::default().title("Snorkel").borders(Borders::ALL))
+    Paragraph::new(text).block(Block::default().borders(Borders::NONE))
 }

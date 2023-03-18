@@ -32,7 +32,13 @@ pub fn render(state: &AppState) -> Paragraph {
         }
     };
 
-    let items = Spans::from(vec![Span::raw("state: "), editor_state]);
+    let items = vec![
+        Spans::from(vec![Span::raw("state: "), editor_state]),
+        Spans::from(vec![
+            Span::raw("frame: "),
+            Span::raw(state.snrkl.frame.to_string()),
+        ]),
+    ];
 
     Paragraph::new(items).block(Block::default().borders(Borders::ALL))
 }

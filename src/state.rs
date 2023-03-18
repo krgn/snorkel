@@ -60,6 +60,7 @@ pub struct AppState {
     pub sel_start: Option<Coord>,
     pub snrkl: Snorkel,
     pub config: Config,
+    pub show_logs: bool,
 }
 
 impl AppState {
@@ -73,6 +74,7 @@ impl AppState {
             sel_start: None,
             snrkl: Snorkel::new(rows, cols),
             undo_steps: Vec::new(),
+            show_logs: false,
         }
     }
 
@@ -85,6 +87,9 @@ impl AppState {
                         EnterInsertMode => self.edit_state = EditorState::Insert,
                         EnterReplaceMode => self.edit_state = EditorState::Replace,
                         EnterSelectMode => self.edit_state = EditorState::Select,
+                        NextFrame => self.snrkl.frame += 1,
+                        ResetFrame => self.snrkl.frame = 0,
+                        ToggleLogs => self.show_logs = !self.show_logs,
                         Move(movement) => self.move_cursor(movement),
                         Delete => {
                             let old = self.snrkl.del_cell(&self.cursor);

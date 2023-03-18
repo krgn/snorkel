@@ -10,6 +10,9 @@ pub enum NormalModeCommand {
     Redo,
     Paste,
     Move(Movement),
+    ToggleLogs,
+    ResetFrame,
+    NextFrame,
     EnterInsertMode,
     EnterReplaceMode,
     EnterSelectMode,
@@ -111,6 +114,9 @@ impl NormalKeymap {
 
         match (code, modi) {
             (KeyCode::Char('p'), KeyModifiers::NONE) => Some(NormalModeCommand::Paste),
+            (KeyCode::Char('l'), KeyModifiers::CONTROL) => Some(NormalModeCommand::ToggleLogs),
+            (KeyCode::Char('f'), KeyModifiers::CONTROL) => Some(NormalModeCommand::NextFrame),
+            (KeyCode::Char('r'), KeyModifiers::CONTROL) => Some(NormalModeCommand::ResetFrame),
             _ => None,
         }
     }

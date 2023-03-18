@@ -1,7 +1,6 @@
 ## TODO
 
 * compute next state on tick (i.e. implement commands)
-  - `C` clock(rate mod): Outputs modulo of frame.
   - `D` delay(rate mod): Bangs on modulo of frame.
   - `E` east: Moves eastward, or bangs.
   - `F` if(a b): Bangs if inputs are equal.

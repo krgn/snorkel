@@ -9,6 +9,7 @@ use crate::{
 pub struct Snorkel {
     pub rows: usize,
     pub cols: usize,
+    pub frame: usize,
     data: Vec<Vec<Option<Op>>>,
 }
 
@@ -21,8 +22,14 @@ impl Snorkel {
         for _ in 0..rows {
             data.push(vec![None; cols]);
         }
+        let frame = 0;
         assert_eq!(data.len(), rows);
-        Snorkel { rows, cols, data }
+        Snorkel {
+            rows,
+            cols,
+            data,
+            frame,
+        }
     }
 
     // ░▀█▀░▀█▀░█▀▀░█░█
@@ -49,6 +56,13 @@ impl Snorkel {
                     }
                     Some(Op::If) => {
                         if let Some(result) = self.op_if(&coord) {
+                            coord.y += 1;
+                            let _ignored = self.set_cell(&coord, result);
+                        }
+                    }
+                    Some(Op::Clock) => {
+                        log::info!("clock");
+                        if let Some(result) = self.op_clock(&coord) {
                             coord.y += 1;
                             let _ignored = self.set_cell(&coord, result);
                         }
@@ -201,6 +215,31 @@ impl Snorkel {
         }
     }
 
+    fn op_clock(&self, loc: &Coord) -> Option<Op> {
+        let rate = self
+            .left_of(loc, 1)
+            .and_then(|op| match op {
+                Op::Result(c) | Op::Val(c) => Op::as_num(c),
+                _ => Some(1),
+            })
+            .unwrap_or(1);
+        let modulo = self
+            .right_of(loc, 1)
+            .and_then(|op| match op {
+                Op::Result(c) | Op::Val(c) => Op::as_num(c),
+                _ => Some(1),
+            })
+            .unwrap_or(8);
+        let below = self.below_of(loc, 1);
+        match below {
+            Some(op) if self.frame % rate == 0 => {
+                Op::binary_op(op, Op::Val('1'), |l, r| (l + r) % modulo)
+            }
+            Some(op) => Some(op),
+            None => Some(Op::Result('0')),
+        }
+    }
+
     // ░█░█░▀█▀░▀█▀░█░░
     // ░█░█░░█░░░█░░█░░
     // ░▀▀▀░░▀░░▀▀▀░▀▀▀
@@ -233,6 +272,24 @@ impl Snorkel {
             y: loc.y,
         };
         self.get_cell(&right_loc)
+    }
+
+    fn below_of(&self, loc: &Coord, offset: usize) -> Option<Op> {
+        let below_y = loc.y.checked_add(offset).and_then(|result| {
+            if result >= self.rows {
+                None
+            } else {
+                Some(result)
+            }
+        });
+        if below_y.is_none() {
+            return None;
+        }
+        let below_loc = Coord {
+            x: loc.x,
+            y: below_y.unwrap(),
+        };
+        self.get_cell(&below_loc)
     }
 
     // Only used in tests.

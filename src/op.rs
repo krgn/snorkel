@@ -201,28 +201,21 @@ impl Op {
     }
 
     pub fn add(lhs: Op, rhs: Op) -> Option<Op> {
-        use Op::*;
-
-        let lhs_num = if let Some(n) = lhs.extract_num() {
-            n
-        } else {
-            return None;
-        };
-
-        let rhs_num = if let Some(n) = rhs.extract_num() {
-            n
-        } else {
-            return None;
-        };
-
-        // perform addition
-        Some(Result(Self::as_value_char(
-            lhs_num.wrapping_add(rhs_num),
-            rhs.is_captial_char(),
-        )))
+        Self::binary_op(lhs, rhs, |l, r| l.wrapping_add(r))
     }
 
     pub fn sub(lhs: Op, rhs: Op) -> Option<Op> {
+        Self::binary_op(lhs, rhs, |l, r| l.wrapping_sub(r))
+    }
+
+    pub fn modulo(lhs: Op, rhs: Op) -> Option<Op> {
+        Self::binary_op(lhs, rhs, |l, r| l % r)
+    }
+
+    pub fn binary_op<F>(lhs: Op, rhs: Op, operation: F) -> Option<Op>
+    where
+        F: Fn(usize, usize) -> usize,
+    {
         use Op::*;
 
         let lhs_num = if let Some(n) = lhs.extract_num() {
@@ -238,7 +231,7 @@ impl Op {
         };
 
         Some(Result(Self::as_value_char(
-            lhs_num.wrapping_sub(rhs_num),
+            operation(lhs_num, rhs_num),
             rhs.is_captial_char(),
         )))
     }
