@@ -1,9 +1,7 @@
 ## TODO
 
 * compute next state on tick (i.e. implement commands)
-  - `D` delay(rate mod): Bangs on modulo of frame.
   - `E` east: Moves eastward, or bangs.
-  - `F` if(a b): Bangs if inputs are equal.
   - `G` generator(x y len): Writes operands with offset.
   - `H` hold: Holds southward operand.
   - `I` increment(step mod): Increments southward operand.

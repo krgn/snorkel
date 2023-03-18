@@ -61,11 +61,18 @@ impl Snorkel {
                         }
                     }
                     Some(Op::Clock) => {
-                        log::info!("clock");
                         if let Some(result) = self.op_clock(&coord) {
                             coord.y += 1;
                             let _ignored = self.set_cell(&coord, result);
                         }
+                    }
+                    Some(Op::Delay) => {
+                        let mut below = coord.clone();
+                        below.y += 1;
+                        let _ignored = match self.op_delay(&coord) {
+                            Some(op) => self.set_cell(&below, op),
+                            None => self.del_cell(&below),
+                        };
                     }
                     _ => (),
                 }
@@ -237,6 +244,28 @@ impl Snorkel {
             }
             Some(op) => Some(op),
             None => Some(Op::Result('0')),
+        }
+    }
+
+    pub fn op_delay(&self, loc: &Coord) -> Option<Op> {
+        let rate = self
+            .left_of(loc, 1)
+            .and_then(|op| match op {
+                Op::Result(c) | Op::Val(c) => Op::as_num(c),
+                _ => Some(1),
+            })
+            .unwrap_or(1);
+        let modulo = self
+            .right_of(loc, 1)
+            .and_then(|op| match op {
+                Op::Result(c) | Op::Val(c) => Op::as_num(c),
+                _ => Some(1),
+            })
+            .unwrap_or(8);
+        if self.frame % rate == 0 && self.frame % modulo == 0 {
+            Some(Op::Bang)
+        } else {
+            Some(Op::EmptyResult)
         }
     }
 
