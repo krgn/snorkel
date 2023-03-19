@@ -42,30 +42,45 @@ impl Snorkel {
                 coord.x = x;
                 coord.y = y;
                 match self.get_cell(&coord) {
+                    // ░█▀█░█▀▄░█▀▄
+                    // ░█▀█░█░█░█░█
+                    // ░▀░▀░▀▀░░▀▀░
                     Some(Op::Add) => {
                         if let Some(result) = self.op_add(&coord) {
                             coord.y += 1;
                             let _ignored = self.set_cell(&coord, result);
                         }
                     }
+                    // ░█▀▀░█░█░█▀▄
+                    // ░▀▀█░█░█░█▀▄
+                    // ░▀▀▀░▀▀▀░▀▀░
                     Some(Op::Sub) => {
                         if let Some(result) = self.op_sub(&coord) {
                             coord.y += 1;
                             let _ignored = self.set_cell(&coord, result);
                         }
                     }
+                    // ░▀█▀░█▀▀
+                    // ░░█░░█▀▀
+                    // ░▀▀▀░▀░░
                     Some(Op::If) => {
                         if let Some(result) = self.op_if(&coord) {
                             coord.y += 1;
                             let _ignored = self.set_cell(&coord, result);
                         }
                     }
+                    // ░█▀▀░█░░░█▀█░█▀▀░█░█
+                    // ░█░░░█░░░█░█░█░░░█▀▄
+                    // ░▀▀▀░▀▀▀░▀▀▀░▀▀▀░▀░▀
                     Some(Op::Clock) => {
                         if let Some(result) = self.op_clock(&coord) {
                             coord.y += 1;
                             let _ignored = self.set_cell(&coord, result);
                         }
                     }
+                    // ░█▀▄░█▀▀░█░░░█▀█░█░█
+                    // ░█░█░█▀▀░█░░░█▀█░░█░
+                    // ░▀▀░░▀▀▀░▀▀▀░▀░▀░░▀░
                     Some(Op::Delay) => {
                         let mut below = coord.clone();
                         below.y += 1;
@@ -74,6 +89,9 @@ impl Snorkel {
                             None => self.del_cell(&below),
                         };
                     }
+                    // ░█▀▀░█▀█░█▀▀░▀█▀
+                    // ░█▀▀░█▀█░▀▀█░░█░
+                    // ░▀▀▀░▀░▀░▀▀▀░░▀░
                     Some(Op::East(frame)) => {
                         if frame != self.frame {
                             let op = self.op_east(&coord);
@@ -86,6 +104,9 @@ impl Snorkel {
                             };
                         }
                     }
+                    // ░█░█░█▀▀░█▀▀░▀█▀
+                    // ░█▄█░█▀▀░▀▀█░░█░
+                    // ░▀░▀░▀▀▀░▀▀▀░░▀░
                     Some(Op::West(frame)) => {
                         if frame != self.frame {
                             let op = self.op_west(&coord);
@@ -98,6 +119,9 @@ impl Snorkel {
                             };
                         }
                     }
+                    // ░█▀█░█▀█░█▀▄░▀█▀░█░█
+                    // ░█░█░█░█░█▀▄░░█░░█▀█
+                    // ░▀░▀░▀▀▀░▀░▀░░▀░░▀░▀
                     Some(Op::North(frame)) => {
                         if frame != self.frame {
                             let op = self.op_north(&coord);
@@ -110,6 +134,9 @@ impl Snorkel {
                             };
                         }
                     }
+                    // ░█▀▀░█▀█░█░█░▀█▀░█░█
+                    // ░▀▀█░█░█░█░█░░█░░█▀█
+                    // ░▀▀▀░▀▀▀░▀▀▀░░▀░░▀░▀
                     Some(Op::South(frame)) => {
                         if frame != self.frame {
                             let op = self.op_south(&coord);
@@ -122,11 +149,17 @@ impl Snorkel {
                             };
                         }
                     }
+                    // ░█▀▄░█▀█░█▀█░█▀▀
+                    // ░█▀▄░█▀█░█░█░█░█
+                    // ░▀▀░░▀░▀░▀░▀░▀▀▀
                     Some(Op::Bang(frame)) => {
                         if frame != self.frame {
                             let _ignored = self.del_cell(&coord);
                         }
                     }
+                    // ░█▀▀░█▀▀░█▀█
+                    // ░█░█░█▀▀░█░█
+                    // ░▀▀▀░▀▀▀░▀░▀
                     Some(Op::Gen) => {
                         let (mut offset, ops) = self.op_gen(&coord);
                         for op in ops.into_iter() {
@@ -134,10 +167,22 @@ impl Snorkel {
                             offset.x += 1;
                         }
                     }
+                    // ░█▀▀░█▄█░█▀█░▀█▀░█░█
+                    // ░█▀▀░█░█░█▀▀░░█░░░█░
+                    // ░▀▀▀░▀░▀░▀░░░░▀░░░▀░
                     Some(Op::EmptyResult(ref loc)) => {
+                        // if this is an orphaned empty result, delete it
                         if let None = self.get_cell(loc) {
                             let _ignored = self.del_cell(&coord);
                         }
+                    }
+                    // ░▀█▀░█▀█░█▀▀
+                    // ░░█░░█░█░█░░
+                    // ░▀▀▀░▀░▀░▀▀▀
+                    Some(Op::Inc) => {
+                        let op = self.op_inc(&coord);
+                        coord.y += 1;
+                        let _ignored = self.set_cell(&coord, op);
                     }
                     _ => (),
                 }
@@ -375,6 +420,32 @@ impl Snorkel {
             Some(_) => Op::Bang(self.frame),
             None => Op::South(self.frame),
         }
+    }
+
+    pub fn op_inc(&self, loc: &Coord) -> Op {
+        let step = self
+            .left_of(loc, 1)
+            .and_then(|op| match op {
+                Op::Result(c) | Op::Val(c) => Op::as_num(c),
+                _ => Some(1),
+            })
+            .unwrap_or(1);
+        let modulo = self
+            .right_of(loc, 1)
+            .and_then(|op| match op {
+                Op::Result(c) | Op::Val(c) => Op::as_num(c),
+                _ => Some(1),
+            })
+            .map(|value| if value == 0 { 1 } else { value })
+            .unwrap_or(36); // modulo 36, since we wrap there anyways
+        let current = self
+            .below_of(loc, 1)
+            .and_then(|op| match op {
+                Op::Result(c) | Op::Val(c) => Op::as_num(c),
+                _ => Some(0),
+            })
+            .unwrap_or(0);
+        Op::Result(Op::as_value_char((current + step) % modulo, false))
     }
 
     pub fn op_gen(&self, loc: &Coord) -> (Coord, Vec<Op>) {
