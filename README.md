@@ -4,7 +4,6 @@
   - `H` hold: Holds southward operand.
   - `J` jumper(val): Outputs northward operand.
   - `K` konkat(len): Reads multiple variables.
-  - `L` lesser(a b): Outputs smallest of inputs.
   - `M` multiply(a b): Outputs product of inputs.
   - `O` read(x y read): Reads operand with offset.
   - `P` push(len key val): Writes eastward operand.

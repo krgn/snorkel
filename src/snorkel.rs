@@ -184,6 +184,14 @@ impl Snorkel {
                         coord.y += 1;
                         let _ignored = self.set_cell(&coord, op);
                     }
+                    // ░█░░░█▀▀░█▀▀░█▀▀
+                    // ░█░░░█▀▀░▀▀█░▀▀█
+                    // ░▀▀▀░▀▀▀░▀▀▀░▀▀▀
+                    Some(Op::Less) => {
+                        let op = self.op_less(&coord);
+                        coord.y += 1;
+                        let _ignored = self.set_cell(&coord, op);
+                    }
                     _ => (),
                 }
             }
@@ -446,6 +454,16 @@ impl Snorkel {
             })
             .unwrap_or(0);
         Op::Result(Op::as_value_char((current + step) % modulo, false))
+    }
+
+    pub fn op_less(&self, loc: &Coord) -> Op {
+        let left = self.left_of(loc, 1).and_then(|op| op.extract_num());
+        let right = self.right_of(loc, 1).and_then(|op| op.extract_num());
+        match (left, right) {
+            (Some(l), Some(r)) if l > r => Op::Result(Op::as_value_char(r, false)),
+            (Some(l), Some(_)) => Op::Result(Op::as_value_char(l, false)),
+            _ => Op::EmptyResult(loc.clone()),
+        }
     }
 
     pub fn op_gen(&self, loc: &Coord) -> (Coord, Vec<Op>) {

@@ -189,11 +189,10 @@ impl Op {
         }
     }
 
-    fn extract_num(&self) -> Option<usize> {
+    pub fn extract_num(&self) -> Option<usize> {
         use Op::*;
         let chr = match self {
-            Val(c) => *c,
-            Result(c) => *c,
+            Val(c) | Result(c) => *c,
             _ => {
                 return None;
             }
