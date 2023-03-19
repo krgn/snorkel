@@ -15,8 +15,8 @@ fn full_layout(size: Rect) -> Vec<Rect> {
         .constraints(
             [
                 layout::Constraint::Min(4),
-                layout::Constraint::Percentage(90),
-                layout::Constraint::Percentage(10),
+                layout::Constraint::Percentage(80),
+                layout::Constraint::Percentage(20),
             ]
             .as_ref(),
         )

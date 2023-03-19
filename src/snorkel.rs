@@ -74,6 +74,57 @@ impl Snorkel {
                             None => self.del_cell(&below),
                         };
                     }
+                    Some(Op::East(frame)) => {
+                        if frame != self.frame {
+                            let op = self.op_east(&coord);
+                            if op.is_bang() {
+                                let _ignored = self.set_cell(&coord, op);
+                            } else {
+                                let _ignored = self.del_cell(&coord);
+                                coord.x += 1;
+                                let _ignored = self.set_cell(&coord, op);
+                            };
+                        }
+                    }
+                    Some(Op::West(frame)) => {
+                        if frame != self.frame {
+                            let op = self.op_west(&coord);
+                            if op.is_bang() {
+                                let _ignored = self.set_cell(&coord, op);
+                            } else {
+                                let _ignored = self.del_cell(&coord);
+                                coord.x -= 1;
+                                let _ignored = self.set_cell(&coord, op);
+                            };
+                        }
+                    }
+                    Some(Op::North(frame)) => {
+                        if frame != self.frame {
+                            let op = self.op_north(&coord);
+                            if op.is_bang() {
+                                let _ignored = self.set_cell(&coord, op);
+                            } else {
+                                let _ignored = self.del_cell(&coord);
+                                coord.y -= 1;
+                                let _ignored = self.set_cell(&coord, op);
+                            };
+                        }
+                    }
+                    Some(Op::South(frame)) => {
+                        if frame != self.frame {
+                            let op = self.op_south(&coord);
+                            if op.is_bang() {
+                                let _ignored = self.set_cell(&coord, op);
+                            } else {
+                                let _ignored = self.del_cell(&coord);
+                                coord.y += 1;
+                                let _ignored = self.set_cell(&coord, op);
+                            };
+                        }
+                    }
+                    Some(Op::Bang) => {
+                        let _ignored = self.del_cell(&coord);
+                    }
                     _ => (),
                 }
             }
@@ -269,6 +320,46 @@ impl Snorkel {
         }
     }
 
+    pub fn op_east(&self, loc: &Coord) -> Op {
+        if loc.x + 1 >= self.cols {
+            return Op::Bang;
+        }
+        match self.right_of(loc, 1) {
+            Some(_) => Op::Bang,
+            None => Op::East(self.frame),
+        }
+    }
+
+    pub fn op_west(&self, loc: &Coord) -> Op {
+        if loc.x.checked_sub(1).is_none() {
+            return Op::Bang;
+        }
+        match self.left_of(loc, 1) {
+            Some(_) => Op::Bang,
+            None => Op::West(self.frame),
+        }
+    }
+
+    pub fn op_north(&self, loc: &Coord) -> Op {
+        if loc.y.checked_sub(1).is_none() {
+            return Op::Bang;
+        }
+        match self.above_of(loc, 1) {
+            Some(_) => Op::Bang,
+            None => Op::North(self.frame),
+        }
+    }
+
+    pub fn op_south(&self, loc: &Coord) -> Op {
+        if loc.y + 1 >= self.rows {
+            return Op::Bang;
+        }
+        match self.below_of(loc, 1) {
+            Some(_) => Op::Bang,
+            None => Op::South(self.frame),
+        }
+    }
+
     // ░█░█░▀█▀░▀█▀░█░░
     // ░█░█░░█░░░█░░█░░
     // ░▀▀▀░░▀░░▀▀▀░▀▀▀
@@ -319,6 +410,24 @@ impl Snorkel {
             y: below_y.unwrap(),
         };
         self.get_cell(&below_loc)
+    }
+
+    fn above_of(&self, loc: &Coord, offset: usize) -> Option<Op> {
+        let above_y = loc.y.checked_sub(offset).and_then(|result| {
+            if result >= self.rows {
+                None
+            } else {
+                Some(result)
+            }
+        });
+        if above_y.is_none() {
+            return None;
+        }
+        let above_loc = Coord {
+            x: loc.x,
+            y: above_y.unwrap(),
+        };
+        self.get_cell(&above_loc)
     }
 
     // Only used in tests.

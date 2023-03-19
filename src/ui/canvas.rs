@@ -46,7 +46,6 @@ pub fn render(state: &AppState) -> Paragraph {
                 let is_comment = op.is_comment();
                 let is_primop = op.is_primop();
                 let is_value = op.is_value();
-                let is_result = op.is_result();
 
                 let c: char = op.as_char(&chars);
 
@@ -113,14 +112,26 @@ pub fn render(state: &AppState) -> Paragraph {
                 } else if is_primop && in_comment {
                     frag.push(c)
                 }
+                //
+                // // ░█▀▄░█▀█░█▀█░█▀▀
+                // // ░█▀▄░█▀█░█░█░█░█
+                // // ░▀▀░░▀░▀░▀░▀░▀▀▀
+                // else if op.is_bang() && !in_comment {
+                //     spn.push(Span::styled(frag, styles.normal));
+                //     spn.push(Span::styled(c.to_string(), styles.result));
+                //     frag = String::new();
+                // } else if op.is_bang() && in_comment {
+                //     frag.push(c)
+                // }
+                //
                 // ░█▀▄░█▀▀░█▀▀░█░█░█░░░▀█▀
                 // ░█▀▄░█▀▀░▀▀█░█░█░█░░░░█░
                 // ░▀░▀░▀▀▀░▀▀▀░▀▀▀░▀▀▀░░▀░
-                else if is_result && !in_comment {
+                else if op.is_result() && !in_comment {
                     spn.push(Span::styled(frag, styles.normal));
                     spn.push(Span::styled(c.to_string(), styles.result));
                     frag = String::new();
-                } else if is_result && in_comment {
+                } else if op.is_result() && in_comment {
                     frag.push(c)
                 }
                 // ░█░█░█▀█░█░░░█░█░█▀▀░█▀▀

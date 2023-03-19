@@ -5,19 +5,19 @@ use crate::op::Op;
 pub struct InsertKeymap;
 
 impl InsertKeymap {
-    pub fn op(ev: KeyEvent) -> Option<InsertModeCommand> {
+    pub fn op(ev: KeyEvent, frame: usize) -> Option<InsertModeCommand> {
         if ev.kind != KeyEventKind::Press {
             return None;
         }
 
         if let KeyCode::Char(c) = ev.code {
-            Op::from(c).map(InsertModeCommand::Op)
+            Op::from(c, frame).map(InsertModeCommand::Op)
         } else {
             None
         }
     }
 
-    pub fn parse_key(ev: KeyEvent) -> Option<InsertModeCommand> {
+    pub fn parse_key(ev: KeyEvent, frame: usize) -> Option<InsertModeCommand> {
         if ev.kind != KeyEventKind::Press {
             return None;
         }
@@ -30,7 +30,7 @@ impl InsertKeymap {
             (KeyCode::Char('['), KeyModifiers::CONTROL) | (KeyCode::Esc, KeyModifiers::NONE) => {
                 Some(Exit)
             }
-            (KeyCode::Char(_), _) => Self::op(ev),
+            (KeyCode::Char(_), _) => Self::op(ev, frame),
             _ => None,
         }
     }

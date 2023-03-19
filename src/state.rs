@@ -89,7 +89,7 @@ impl AppState {
             sel_start: None,
             snrkl: Snorkel::new(rows, cols),
             undo_steps: Vec::new(),
-            show_logs: false,
+            show_logs: true,
         }
     }
 
@@ -102,8 +102,14 @@ impl AppState {
                         EnterInsertMode => self.edit_state = EditorState::Insert,
                         EnterReplaceMode => self.edit_state = EditorState::Replace,
                         EnterSelectMode => self.edit_state = EditorState::Select,
-                        NextFrame => self.snrkl.frame += 1,
-                        ResetFrame => self.snrkl.frame = 0,
+                        NextFrame => {
+                            self.snrkl.frame += 1;
+                            self.tick();
+                        }
+                        ResetFrame => {
+                            self.snrkl.frame = 0;
+                            self.tick();
+                        }
                         ToggleLogs => self.show_logs = !self.show_logs,
                         Move(movement) => self.move_cursor(movement),
                         Delete => {
@@ -174,7 +180,7 @@ impl AppState {
             }
             EditorState::Insert => {
                 use InsertModeCommand::*;
-                if let Some(cmd) = InsertKeymap::parse_key(key) {
+                if let Some(cmd) = InsertKeymap::parse_key(key, self.snrkl.frame) {
                     match cmd {
                         Exit => self.edit_state = EditorState::default(),
                         Op(op) => {
@@ -186,7 +192,7 @@ impl AppState {
             }
             EditorState::Replace => {
                 use ReplaceModeCommand::*;
-                if let Some(cmd) = ReplaceKeymap::parse_key(key) {
+                if let Some(cmd) = ReplaceKeymap::parse_key(key, self.snrkl.frame) {
                     match cmd {
                         Exit => self.edit_state = EditorState::default(),
                         Op(op) => {

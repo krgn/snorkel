@@ -7,7 +7,7 @@ pub enum Op {
     Clock,
     Delay,
     Comment,
-    East,
+    East(usize),
     Gen,
     Hold,
     If,
@@ -18,17 +18,17 @@ pub enum Op {
     Less,
     Mul,
     Val(char),
-    North,
+    North(usize),
     Push,
     Query,
     Rand,
     Read,
-    South,
+    South(usize),
     Sub,
     Track,
     Uclid,
     Var,
-    West,
+    West(usize),
     Write,
     Ymp,
     EmptyResult,
@@ -237,13 +237,13 @@ impl Op {
         )))
     }
 
-    pub fn from(value: char) -> Option<Op> {
+    pub fn from(value: char, frame: usize) -> Option<Op> {
         match value {
             'A' => Some(Op::Add),
             'B' => Some(Op::Sub),
             'C' => Some(Op::Clock),
             'D' => Some(Op::Delay),
-            'E' => Some(Op::East),
+            'E' => Some(Op::East(frame)),
             'F' => Some(Op::If),
             'G' => Some(Op::Gen),
             'H' => Some(Op::Hold),
@@ -252,16 +252,16 @@ impl Op {
             'K' => Some(Op::Konkat),
             'L' => Some(Op::Less),
             'M' => Some(Op::Mul),
-            'N' => Some(Op::North),
+            'N' => Some(Op::North(frame)),
             'O' => Some(Op::Read),
             'P' => Some(Op::Push),
             'Q' => Some(Op::Query),
             'R' => Some(Op::Rand),
-            'S' => Some(Op::South),
+            'S' => Some(Op::South(frame)),
             'T' => Some(Op::Track),
             'U' => Some(Op::Uclid),
             'V' => Some(Op::Var),
-            'W' => Some(Op::West),
+            'W' => Some(Op::West(frame)),
             'X' => Some(Op::Write),
             'Y' => Some(Op::Ymp),
             'Z' => Some(Op::Lerp),
@@ -304,6 +304,10 @@ impl Op {
         }
     }
 
+    pub fn is_bang(&self) -> bool {
+        *self == Op::Bang
+    }
+
     pub fn as_char(&self, cfg: &CharConfig) -> char {
         match self {
             Op::Add => 'A',
@@ -311,7 +315,7 @@ impl Op {
             Op::Clock => 'C',
             Op::Comment => '#',
             Op::Delay => 'D',
-            Op::East => 'E',
+            Op::East(_) => 'E',
             Op::Gen => 'G',
             Op::Hold => 'H',
             Op::If => 'F',
@@ -322,17 +326,17 @@ impl Op {
             Op::Less => 'L',
             Op::Mul => 'M',
             Op::Val(c) => *c,
-            Op::North => 'N',
+            Op::North(_) => 'N',
             Op::Push => 'P',
             Op::Query => 'Q',
             Op::Rand => 'R',
             Op::Read => 'O',
-            Op::South => 'S',
+            Op::South(_) => 'S',
             Op::Sub => 'B',
             Op::Track => 'T',
             Op::Uclid => 'U',
             Op::Var => 'V',
-            Op::West => 'W',
+            Op::West(_) => 'W',
             Op::Write => 'X',
             Op::Ymp => 'Y',
             Op::Result(c) => *c,

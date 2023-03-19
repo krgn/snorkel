@@ -24,7 +24,6 @@ fn ui_loop<B: Backend>(terminal: &mut Terminal<B>) -> io::Result<()> {
 
         if let Event::Key(key) = event::read()? {
             state.input(key);
-            state.tick();
         }
     }
 }
