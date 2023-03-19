@@ -1,9 +1,9 @@
-use crate::config::CharConfig;
+use crate::{config::CharConfig, util::Coord};
 
-#[derive(Copy, Clone, Debug, Eq, PartialEq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Eq, PartialEq, PartialOrd, Ord)]
 pub enum Op {
     Add,
-    Bang,
+    Bang(usize),
     Clock,
     Delay,
     Comment,
@@ -31,7 +31,7 @@ pub enum Op {
     West(usize),
     Write,
     Ymp,
-    EmptyResult,
+    EmptyResult(Coord),
     Result(char),
 }
 
@@ -266,7 +266,7 @@ impl Op {
             'Y' => Some(Op::Ymp),
             'Z' => Some(Op::Lerp),
 
-            '*' => Some(Op::Bang),
+            '*' => Some(Op::Bang(frame)),
             '#' => Some(Op::Comment),
 
             // TODO: I'm lazy, but this should work for now
@@ -278,7 +278,7 @@ impl Op {
 
     pub fn is_primop(&self) -> bool {
         match self {
-            Op::Bang | Op::Comment | Op::Val(_) | Op::Result(_) | Op::EmptyResult => false,
+            Op::Bang(_) | Op::Comment | Op::Val(_) | Op::Result(_) | Op::EmptyResult(_) => false,
             _ => true,
         }
     }
@@ -299,19 +299,22 @@ impl Op {
 
     pub fn is_result(&self) -> bool {
         match self {
-            Op::EmptyResult | Op::Result(_) | Op::Bang => true,
+            Op::EmptyResult(_) | Op::Result(_) | Op::Bang(_) => true,
             _ => false,
         }
     }
 
     pub fn is_bang(&self) -> bool {
-        *self == Op::Bang
+        match self {
+            Op::Bang(_) => true,
+            _ => false,
+        }
     }
 
     pub fn as_char(&self, cfg: &CharConfig) -> char {
         match self {
             Op::Add => 'A',
-            Op::Bang => '*',
+            Op::Bang(_) => '*',
             Op::Clock => 'C',
             Op::Comment => '#',
             Op::Delay => 'D',
@@ -340,7 +343,7 @@ impl Op {
             Op::Write => 'X',
             Op::Ymp => 'Y',
             Op::Result(c) => *c,
-            Op::EmptyResult => cfg.empty,
+            Op::EmptyResult(_) => cfg.empty,
         }
     }
 }

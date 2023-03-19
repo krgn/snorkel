@@ -122,8 +122,22 @@ impl Snorkel {
                             };
                         }
                     }
-                    Some(Op::Bang) => {
-                        let _ignored = self.del_cell(&coord);
+                    Some(Op::Bang(frame)) => {
+                        if frame != self.frame {
+                            let _ignored = self.del_cell(&coord);
+                        }
+                    }
+                    Some(Op::Gen) => {
+                        let (mut offset, ops) = self.op_gen(&coord);
+                        for op in ops.into_iter() {
+                            let _ignored = self.set_cell(&offset, op);
+                            offset.x += 1;
+                        }
+                    }
+                    Some(Op::EmptyResult(ref loc)) => {
+                        if let None = self.get_cell(loc) {
+                            let _ignored = self.del_cell(&coord);
+                        }
                     }
                     _ => (),
                 }
@@ -167,9 +181,9 @@ impl Snorkel {
                     x: offset_x,
                     y: offset_y,
                 };
-                match row[x] {
+                match &row[x] {
                     Some(op) => {
-                        let old = self.set_cell(&target, op);
+                        let old = self.set_cell(&target, op.clone());
                         undo_ops.push((target, old));
                     }
                     None => {
@@ -183,7 +197,10 @@ impl Snorkel {
     }
 
     pub fn get_cell(&self, loc: &Coord) -> Option<Op> {
-        self.data[loc.y][loc.x]
+        if loc.y >= self.rows || loc.x >= self.cols {
+            return None;
+        }
+        self.data[loc.y][loc.x].clone()
     }
 
     pub fn set_cell(&mut self, loc: &Coord, op: Op) -> Option<Op> {
@@ -238,10 +255,10 @@ impl Snorkel {
             (Some(lhs), Some(rhs)) => Op::add(lhs, rhs),
             (Some(Op::Val(c)), None) => Some(Op::Result(c)),
             (Some(Op::Result(c)), None) => Some(Op::Result(c)),
-            (Some(Op::EmptyResult), None) => Some(Op::Result('0')),
+            (Some(Op::EmptyResult(_)), None) => Some(Op::Result('0')),
             (None, Some(Op::Val(c))) => Some(Op::Result(c)),
             (None, Some(Op::Result(c))) => Some(Op::Result(c)),
-            (None, Some(Op::EmptyResult)) => Some(Op::Result('0')),
+            (None, Some(Op::EmptyResult(_))) => Some(Op::Result('0')),
             _ => Some(Op::Result('0')),
         }
     }
@@ -253,10 +270,10 @@ impl Snorkel {
             (Some(lhs), Some(rhs)) => Op::sub(lhs, rhs),
             (Some(Op::Val(c)), None) => Some(Op::Result(c)),
             (Some(Op::Result(c)), None) => Some(Op::Result(c)),
-            (Some(Op::EmptyResult), None) => Some(Op::Result('0')),
+            (Some(Op::EmptyResult(_)), None) => Some(Op::Result('0')),
             (None, Some(Op::Val(c))) => Some(Op::Result(c)),
             (None, Some(Op::Result(c))) => Some(Op::Result(c)),
-            (None, Some(Op::EmptyResult)) => Some(Op::Result('0')),
+            (None, Some(Op::EmptyResult(_))) => Some(Op::Result('0')),
             _ => Some(Op::Result('0')),
         }
     }
@@ -265,11 +282,11 @@ impl Snorkel {
         let left = self.left_of(loc, 1);
         let right = self.right_of(loc, 1);
         match (left, right) {
-            (Some(lhs), Some(rhs)) if lhs == rhs => Some(Op::Bang),
-            (Some(_), Some(_)) => Some(Op::EmptyResult),
-            (Some(_), None) => Some(Op::EmptyResult),
-            (None, Some(_)) => Some(Op::EmptyResult),
-            (None, None) => Some(Op::Bang),
+            (Some(lhs), Some(rhs)) if lhs == rhs => Some(Op::Bang(self.frame)),
+            (Some(_), Some(_)) => Some(Op::EmptyResult(loc.clone())),
+            (Some(_), None) => Some(Op::EmptyResult(loc.clone())),
+            (None, Some(_)) => Some(Op::EmptyResult(loc.clone())),
+            (None, None) => Some(Op::Bang(self.frame)),
         }
     }
 
@@ -314,50 +331,92 @@ impl Snorkel {
             })
             .unwrap_or(8);
         if self.frame % rate == 0 && self.frame % modulo == 0 {
-            Some(Op::Bang)
+            Some(Op::Bang(self.frame))
         } else {
-            Some(Op::EmptyResult)
+            Some(Op::EmptyResult(loc.clone()))
         }
     }
 
     pub fn op_east(&self, loc: &Coord) -> Op {
         if loc.x + 1 >= self.cols {
-            return Op::Bang;
+            return Op::Bang(self.frame);
         }
         match self.right_of(loc, 1) {
-            Some(_) => Op::Bang,
+            Some(_) => Op::Bang(self.frame),
             None => Op::East(self.frame),
         }
     }
 
     pub fn op_west(&self, loc: &Coord) -> Op {
         if loc.x.checked_sub(1).is_none() {
-            return Op::Bang;
+            return Op::Bang(self.frame);
         }
         match self.left_of(loc, 1) {
-            Some(_) => Op::Bang,
+            Some(_) => Op::Bang(self.frame),
             None => Op::West(self.frame),
         }
     }
 
     pub fn op_north(&self, loc: &Coord) -> Op {
         if loc.y.checked_sub(1).is_none() {
-            return Op::Bang;
+            return Op::Bang(self.frame);
         }
         match self.above_of(loc, 1) {
-            Some(_) => Op::Bang,
+            Some(_) => Op::Bang(self.frame),
             None => Op::North(self.frame),
         }
     }
 
     pub fn op_south(&self, loc: &Coord) -> Op {
         if loc.y + 1 >= self.rows {
-            return Op::Bang;
+            return Op::Bang(self.frame);
         }
         match self.below_of(loc, 1) {
-            Some(_) => Op::Bang,
+            Some(_) => Op::Bang(self.frame),
             None => Op::South(self.frame),
         }
+    }
+
+    pub fn op_gen(&self, loc: &Coord) -> (Coord, Vec<Op>) {
+        let mut start = loc.clone();
+        // enforce that this should by default be a line under current
+        start.y += 1;
+        start.x += self
+            .left_of(loc, 3)
+            .and_then(|op| match op {
+                Op::Result(c) | Op::Val(c) => Op::as_num(c),
+                _ => Some(0),
+            })
+            .unwrap_or(0);
+        start.y += self
+            .left_of(loc, 2)
+            .and_then(|op| match op {
+                Op::Result(c) | Op::Val(c) => Op::as_num(c),
+                _ => Some(1),
+            })
+            .unwrap_or(1);
+        let len = self
+            .left_of(loc, 1)
+            .and_then(|op| match op {
+                Op::Result(c) | Op::Val(c) => Op::as_num(c),
+                _ => Some(0),
+            })
+            .unwrap_or(0);
+        let mut cursor = loc.clone();
+        cursor.x += 1;
+        let mut ops = vec![];
+        for _ in 0..len + 1 {
+            let val = self
+                .get_cell(&cursor)
+                .map(|op| match op {
+                    Op::Val(c) => Op::Result(c),
+                    other => other,
+                })
+                .unwrap_or(Op::EmptyResult(loc.clone()));
+            ops.push(val);
+            cursor.x += 1;
+        }
+        return (start, ops);
     }
 
     // ░█░█░▀█▀░▀█▀░█░░
@@ -553,7 +612,10 @@ mod tick_tests {
         snrkl.set_cell(&Coord { x: 2, y: 0 }, Op::Val('1'));
         assert_eq!(None, snrkl.get_cell(&Coord { x: 1, y: 1 }));
         snrkl.tick();
-        assert_eq!(Some(Op::Bang), snrkl.get_cell(&Coord { x: 1, y: 1 }));
+        assert_eq!(
+            Some(Op::Bang(snrkl.frame)),
+            snrkl.get_cell(&Coord { x: 1, y: 1 })
+        );
     }
 
     #[test]
@@ -564,7 +626,10 @@ mod tick_tests {
         snrkl.set_cell(&Coord { x: 2, y: 0 }, Op::Val('2'));
         assert_eq!(None, snrkl.get_cell(&Coord { x: 1, y: 1 }));
         snrkl.tick();
-        assert_eq!(Some(Op::EmptyResult), snrkl.get_cell(&Coord { x: 1, y: 1 }));
+        assert_eq!(
+            Some(Op::EmptyResult(Coord { x: 1, y: 0 })),
+            snrkl.get_cell(&Coord { x: 1, y: 1 })
+        );
     }
 
     #[test]
@@ -573,7 +638,10 @@ mod tick_tests {
         snrkl.set_cell(&Coord { x: 1, y: 0 }, Op::If);
         assert_eq!(None, snrkl.get_cell(&Coord { x: 1, y: 1 }));
         snrkl.tick();
-        assert_eq!(Some(Op::Bang), snrkl.get_cell(&Coord { x: 1, y: 1 }));
+        assert_eq!(
+            Some(Op::Bang(snrkl.frame)),
+            snrkl.get_cell(&Coord { x: 1, y: 1 })
+        );
     }
 }
 

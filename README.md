@@ -1,7 +1,6 @@
 ## TODO
 
 * compute next state on tick (i.e. implement commands)
-  - `G` generator(x y len): Writes operands with offset.
   - `H` hold: Holds southward operand.
   - `I` increment(step mod): Increments southward operand.
   - `J` jumper(val): Outputs northward operand.
