@@ -1,7 +1,6 @@
 ## TODO
 
 * compute next state on tick (i.e. implement commands)
-  - `H` hold: Holds southward operand.
   - `K` konkat(len): Reads multiple variables.
   - `O` read(x y read): Reads operand with offset.
   - `P` push(len key val): Writes eastward operand.

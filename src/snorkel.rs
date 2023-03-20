@@ -236,6 +236,22 @@ impl Snorkel {
                             let _ignored = self.del_cell(&coord);
                         }
                     },
+                    // ░█░█░█▀█░█░░░█▀▄
+                    // ░█▀█░█░█░█░░░█░█
+                    // ░▀░▀░▀▀▀░▀▀▀░▀▀░
+                    Some(Op::Hold) => {
+                        let below = self.below_of(&coord, 1);
+                        let next = match below {
+                            Some(Op::East(_)) => Op::East(self.frame),
+                            Some(Op::West(_)) => Op::West(self.frame),
+                            Some(Op::North(_)) => Op::North(self.frame),
+                            Some(Op::South(_)) => Op::South(self.frame),
+                            Some(op) => op,
+                            None => Op::EmptyResult(coord.clone()),
+                        };
+                        coord.y += 1;
+                        let _ignored = self.set_cell(&coord, next);
+                    }
                     _ => (),
                 }
             }
@@ -467,6 +483,7 @@ impl Snorkel {
             return Op::Bang(self.frame);
         }
         match self.right_of(loc, 1) {
+            Some(Op::EmptyResult(_)) => Op::East(self.frame),
             Some(_) => Op::Bang(self.frame),
             None => Op::East(self.frame),
         }
@@ -477,6 +494,7 @@ impl Snorkel {
             return Op::Bang(self.frame);
         }
         match self.left_of(loc, 1) {
+            Some(Op::EmptyResult(_)) => Op::West(self.frame),
             Some(_) => Op::Bang(self.frame),
             None => Op::West(self.frame),
         }
@@ -487,6 +505,7 @@ impl Snorkel {
             return Op::Bang(self.frame);
         }
         match self.above_of(loc, 1) {
+            Some(Op::EmptyResult(_)) => Op::North(self.frame),
             Some(_) => Op::Bang(self.frame),
             None => Op::North(self.frame),
         }
@@ -497,6 +516,7 @@ impl Snorkel {
             return Op::Bang(self.frame);
         }
         match self.below_of(loc, 1) {
+            Some(Op::EmptyResult(_)) => Op::South(self.frame),
             Some(_) => Op::Bang(self.frame),
             None => Op::South(self.frame),
         }
