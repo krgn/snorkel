@@ -210,6 +210,32 @@ impl Snorkel {
                         coord.y += 1;
                         let _ignored = self.set_cell(&coord, op);
                     }
+                    // ░▀▀█░█░█░█▄█░█▀█░█▀▀░█▀▄
+                    // ░░░█░█░█░█░█░█▀▀░█▀▀░█▀▄
+                    // ░▀▀░░▀▀▀░▀░▀░▀░░░▀▀▀░▀░▀
+                    Some(Op::Jmp) => match self.above_of(&coord, 1) {
+                        Some(op) => {
+                            coord.y += 1;
+                            let _ignored = self.set_cell(&coord, op);
+                        }
+                        None => {
+                            coord.y += 1;
+                            let _ignored = self.del_cell(&coord);
+                        }
+                    },
+                    // ░█░█░█░█░█▄█░█▀█░█▀▀░█▀▄
+                    // ░░█░░█░█░█░█░█▀▀░█▀▀░█▀▄
+                    // ░░▀░░▀▀▀░▀░▀░▀░░░▀▀▀░▀░▀
+                    Some(Op::Ymp) => match self.left_of(&coord, 1) {
+                        Some(op) => {
+                            coord.x += 1;
+                            let _ignored = self.set_cell(&coord, op);
+                        }
+                        None => {
+                            coord.x += 1;
+                            let _ignored = self.del_cell(&coord);
+                        }
+                    },
                     _ => (),
                 }
             }
