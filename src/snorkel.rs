@@ -1,5 +1,7 @@
 use std::cmp;
 
+use rand::Rng;
+
 use crate::{
     op::Op,
     state::UndoOp,
@@ -59,6 +61,22 @@ impl Snorkel {
                             coord.y += 1;
                             let _ignored = self.set_cell(&coord, result);
                         }
+                    }
+                    // ░█▄█░█░█░█░░
+                    // ░█░█░█░█░█░░
+                    // ░▀░▀░▀▀▀░▀▀▀
+                    Some(Op::Mul) => {
+                        let op = self.op_mul(&coord);
+                        coord.y += 1;
+                        let _ignored = self.set_cell(&coord, op);
+                    }
+                    // ░█▀▄░█▀█░█▀█░█▀▄
+                    // ░█▀▄░█▀█░█░█░█░█
+                    // ░▀░▀░▀░▀░▀░▀░▀▀░
+                    Some(Op::Rand) => {
+                        let op = self.op_rand(&coord);
+                        coord.y += 1;
+                        let _ignored = self.set_cell(&coord, op);
                     }
                     // ░▀█▀░█▀▀
                     // ░░█░░█▀▀
@@ -329,6 +347,34 @@ impl Snorkel {
             (None, Some(Op::EmptyResult(_))) => Some(Op::Result('0')),
             _ => Some(Op::Result('0')),
         }
+    }
+
+    fn op_mul(&self, loc: &Coord) -> Op {
+        let left = self.left_of(loc, 1).and_then(|op| op.extract_num());
+        let right = self.right_of(loc, 1).and_then(|op| op.extract_num());
+        match (left, right) {
+            (Some(l), Some(r)) => Op::Result(Op::as_value_char(l * r, false)),
+            _ => Op::EmptyResult(loc.clone()),
+        }
+    }
+
+    fn op_rand(&self, loc: &Coord) -> Op {
+        let left = self
+            .left_of(loc, 1)
+            .and_then(|op| op.extract_num())
+            .unwrap_or(0);
+        let right = self
+            .right_of(loc, 1)
+            .and_then(|op| op.extract_num())
+            .unwrap_or(35);
+        let min = cmp::min(left, right);
+        let max = cmp::max(left, right);
+        let val = if min == max {
+            min
+        } else {
+            rand::thread_rng().gen_range(min..max)
+        };
+        Op::Result(Op::as_value_char(val, false))
     }
 
     fn op_if(&self, loc: &Coord) -> Option<Op> {
