@@ -1,17 +1,16 @@
-use std::cmp;
-
-use rand::Rng;
-
 use crate::{
     op::Op,
     state::UndoOp,
     util::{Coord, Selection},
 };
+use rand::Rng;
+use std::{cmp, collections::HashMap};
 
 pub struct Snorkel {
     pub rows: usize,
     pub cols: usize,
     pub frame: usize,
+    vars: HashMap<char, Op>,
     data: Vec<Vec<Option<Op>>>,
 }
 
@@ -25,12 +24,14 @@ impl Snorkel {
             data.push(vec![None; cols]);
         }
         let frame = 0;
+        let vars = HashMap::new();
         assert_eq!(data.len(), rows);
         Snorkel {
             rows,
             cols,
             data,
             frame,
+            vars,
         }
     }
 
@@ -264,6 +265,10 @@ impl Snorkel {
                     // ░█▄█░█▀▄░░█░░░█░░█▀▀
                     // ░▀░▀░▀░▀░▀▀▀░░▀░░▀▀▀
                     Some(Op::Write) => self.op_write(&coord),
+                    // ░█░█░█▀█░█▀▄
+                    // ░▀▄▀░█▀█░█▀▄
+                    // ░░▀░░▀░▀░▀░▀
+                    Some(Op::Var) => self.op_var(&coord),
                     _ => (),
                 }
             }
@@ -612,7 +617,7 @@ impl Snorkel {
         return (start, ops);
     }
 
-    fn op_read(&self, loc: &Coord) -> Op {
+    pub fn op_read(&self, loc: &Coord) -> Op {
         let x = self
             .left_of(loc, 2)
             .and_then(|op| op.extract_num())
@@ -632,7 +637,7 @@ impl Snorkel {
             .unwrap_or(Op::EmptyResult(loc.clone()))
     }
 
-    fn op_write(&mut self, loc: &Coord) {
+    pub fn op_write(&mut self, loc: &Coord) {
         let mut target = loc.clone();
         target.y += 1;
         let op = self
@@ -649,10 +654,44 @@ impl Snorkel {
         let y = self
             .left_of(loc, 1)
             .and_then(|op| op.extract_num())
-            .unwrap_or(1);
+            .unwrap_or(0);
         target.x += x;
         target.y += y;
         let _ingored = self.set_cell(&target, op);
+    }
+
+    pub fn op_var(&mut self, loc: &Coord) {
+        let left = self.left_of(&loc, 1).and_then(|op| match op {
+            Op::Val(ref c) => Some(*c),
+            Op::Result(ref c) => Some(*c),
+            _ => None,
+        });
+        let right = self.right_of(&loc, 1);
+        let op = match (left, right) {
+            // write mode
+            (Some(key), Some(op)) => {
+                let _ = self.vars.insert(key, op);
+                None
+            }
+            (Some(key), None) => {
+                let _ = self.vars.remove(&key);
+                None
+            }
+            (None, Some(Op::Val(ref key))) | (None, Some(Op::Result(ref key))) => {
+                self.vars.get(key).map(|op| op.clone())
+            }
+            (None, _) => Some(Op::EmptyResult(loc.clone())),
+        };
+        let mut below = loc.clone();
+        below.y += 1;
+        match op {
+            Some(op) => {
+                let _ignore = self.set_cell(&below, op);
+            }
+            None => {
+                let _ignore = self.del_cell(&below);
+            }
+        }
     }
 
     // ░█░█░▀█▀░▀█▀░█░░

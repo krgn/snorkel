@@ -6,7 +6,6 @@
   - `Q` query(x y len): Reads operands with offset.
   - `T` track(key len val): Reads eastward operand.
   - `U` uclid(step max): Bangs on Euclidean rhythm.
-  - `V` variable(write read): Reads and writes variable.
   - `Z` lerp(rate target): Transitions operand to input.
   - `*` bang: Bangs neighboring operands.
   - `$` self(cmd): Send a command to Orca, or load external file.
