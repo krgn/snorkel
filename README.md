@@ -2,7 +2,6 @@
 
 * compute next state on tick (i.e. implement commands)
   - `K` konkat(len): Reads multiple variables.
-  - `O` read(x y read): Reads operand with offset.
   - `P` push(len key val): Writes eastward operand.
   - `Q` query(x y len): Reads operands with offset.
   - `T` track(key len val): Reads eastward operand.
@@ -18,9 +17,6 @@
   - `/` byte(high low): Send a raw hexadecimal byte.
   - `=` play(ch oct note velocity*): Play note with built-in synth.
 * scheduler
-  - midi IO
-  - OSC IO
-  - UDP IO
 * load/save file
 * re-size
 * re-grid

@@ -252,6 +252,14 @@ impl Snorkel {
                         coord.y += 1;
                         let _ignored = self.set_cell(&coord, next);
                     }
+                    // ░█▀▄░█▀▀░█▀█░█▀▄
+                    // ░█▀▄░█▀▀░█▀█░█░█
+                    // ░▀░▀░▀▀▀░▀░▀░▀▀░
+                    Some(Op::Read) => {
+                        let op = self.op_read(&coord);
+                        coord.y += 1;
+                        let _ignored = self.set_cell(&coord, op);
+                    }
                     _ => (),
                 }
             }
@@ -598,6 +606,26 @@ impl Snorkel {
             cursor.x += 1;
         }
         return (start, ops);
+    }
+
+    fn op_read(&self, loc: &Coord) -> Op {
+        let x = self
+            .left_of(loc, 2)
+            .and_then(|op| op.extract_num())
+            .unwrap_or(1);
+        let y = self
+            .left_of(loc, 1)
+            .and_then(|op| op.extract_num())
+            .unwrap_or(0);
+        let mut source = loc.clone();
+        source.x += cmp::max(x, 1);
+        source.y += y;
+        self.get_cell(&source)
+            .map(|op| match op {
+                Op::Val(ref c) => Op::Result(*c),
+                op => op,
+            })
+            .unwrap_or(Op::EmptyResult(loc.clone()))
     }
 
     // ░█░█░▀█▀░▀█▀░█░░
