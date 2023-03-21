@@ -260,6 +260,10 @@ impl Snorkel {
                         coord.y += 1;
                         let _ignored = self.set_cell(&coord, op);
                     }
+                    // ░█░█░█▀▄░▀█▀░▀█▀░█▀▀
+                    // ░█▄█░█▀▄░░█░░░█░░█▀▀
+                    // ░▀░▀░▀░▀░▀▀▀░░▀░░▀▀▀
+                    Some(Op::Write) => self.op_write(&coord),
                     _ => (),
                 }
             }
@@ -626,6 +630,29 @@ impl Snorkel {
                 op => op,
             })
             .unwrap_or(Op::EmptyResult(loc.clone()))
+    }
+
+    fn op_write(&mut self, loc: &Coord) {
+        let mut target = loc.clone();
+        target.y += 1;
+        let op = self
+            .right_of(&loc, 1)
+            .map(|op| match op {
+                Op::Val(ref c) => Op::Result(*c),
+                op => op,
+            })
+            .unwrap_or(Op::EmptyResult(loc.clone()));
+        let x = self
+            .left_of(loc, 2)
+            .and_then(|op| op.extract_num())
+            .unwrap_or(0);
+        let y = self
+            .left_of(loc, 1)
+            .and_then(|op| op.extract_num())
+            .unwrap_or(1);
+        target.x += x;
+        target.y += y;
+        let _ingored = self.set_cell(&target, op);
     }
 
     // ░█░█░▀█▀░▀█▀░█░░
