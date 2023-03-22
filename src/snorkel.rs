@@ -269,6 +269,10 @@ impl Snorkel {
                     // ░▀▄▀░█▀█░█▀▄
                     // ░░▀░░▀░▀░▀░▀
                     Some(Op::Var) => self.op_var(&coord),
+                    // ░█░█░█▀█░█▀█░█░█░█▀█░▀█▀
+                    // ░█▀▄░█░█░█░█░█▀▄░█▀█░░█░
+                    // ░▀░▀░▀▀▀░▀░▀░▀░▀░▀░▀░░▀░
+                    Some(Op::Konkat) => self.op_konkat(&coord),
                     _ => (),
                 }
             }
@@ -658,6 +662,31 @@ impl Snorkel {
         target.x += x;
         target.y += y;
         let _ingored = self.set_cell(&target, op);
+    }
+
+    pub fn op_konkat(&mut self, loc: &Coord) {
+        let len = self
+            .left_of(loc, 1)
+            .and_then(|op| op.extract_num())
+            .map(|n| cmp::max(n, 1))
+            .unwrap_or(1);
+        let mut target = loc.clone();
+        target.y += 1;
+        for offset in 1..len + 1 {
+            let op = self
+                .right_of(loc, offset)
+                .and_then(|op| match op {
+                    Op::Val(ref c) | Op::Result(ref c) => self.vars.get(c),
+                    _ => None,
+                })
+                .map(|op| match op {
+                    Op::Val(ref c) => Op::Result(*c),
+                    op => op.clone(),
+                })
+                .unwrap_or_else(|| Op::EmptyResult(loc.clone()));
+            target.x += 1;
+            let _ignored = self.set_cell(&target, op);
+        }
     }
 
     pub fn op_var(&mut self, loc: &Coord) {

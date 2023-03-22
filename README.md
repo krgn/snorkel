@@ -1,7 +1,6 @@
 ## TODO
 
 * compute next state on tick (i.e. implement commands)
-  - `K` konkat(len): Reads multiple variables.
   - `P` push(len key val): Writes eastward operand.
   - `Q` query(x y len): Reads operands with offset.
   - `T` track(key len val): Reads eastward operand.
