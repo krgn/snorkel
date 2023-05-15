@@ -473,9 +473,9 @@ dependencies = [
 
 [[package]]
 name = "jumprope"
-version = "1.1.1"
+version = "1.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "76ff13229092ab69baa5e45e49e3ebf75637ca61061b5c233b7d2eb3e91855a2"
+checksum = "829c74fe88dda0d2a5425b022b44921574a65c4eb78e6e39a61b40eb416a4ef8"
 dependencies = [
  "rand",
  "str_indices",
