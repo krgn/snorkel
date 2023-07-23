@@ -285,6 +285,10 @@ impl Snorkel {
                     // ░░█░░█▀▄░█▀█░█░░░█▀▄
                     // ░░▀░░▀░▀░▀░▀░▀▀▀░▀░▀
                     Some(Op::Track) => self.op_track(&coord),
+                    // ░█░█░█▀▀░█░░░▀█▀░█▀▄
+                    // ░█░█░█░░░█░░░░█░░█░█
+                    // ░▀▀▀░▀▀▀░▀▀▀░▀▀▀░▀▀░
+                    Some(Op::Uclid) => self.op_uclid(&coord),
                     _ => (),
                 }
             }
@@ -807,6 +811,29 @@ impl Snorkel {
                         y: loc.y + 1,
                     };
                     self.set_cell(&dest, op);
+                }
+            }
+            _ => return,
+        }
+    }
+
+    fn op_uclid(&mut self, loc: &Coord) {
+        let step = self
+            .left_of(&loc, 1)
+            .and_then(|op| op.extract_num())
+            .map(|n| n + 1);
+        let max = self.right_of(&loc, 1).and_then(|op| op.extract_num());
+        match (step, max) {
+            (Some(step), Some(max)) => {
+                let curr = self.frame % step;
+                let dest = Coord {
+                    x: loc.x,
+                    y: loc.y + 1,
+                };
+                if curr == 0 && curr < max {
+                    self.set_cell(&dest, Op::Bang(self.frame));
+                } else {
+                    self.del_cell(&dest);
                 }
             }
             _ => return,
@@ -1376,6 +1403,62 @@ mod tests {
 ········
 ········
 ········
+········
+"#;
+        assert_eq!(expected.trim_start(), rendered);
+    }
+
+    #[test]
+    fn op_uclid() {
+        let mut snrkl = Snorkel::new(4usize, 8usize);
+        snrkl.set_cell(&Coord { x: 1, y: 1 }, Op::Val('1')); // step
+        snrkl.set_cell(&Coord { x: 2, y: 1 }, Op::Uclid);
+        snrkl.set_cell(&Coord { x: 3, y: 1 }, Op::Val('2')); // max
+        let rendered = snrkl.render();
+        let expected = r#"
+········
+·1U2····
+········
+········
+"#;
+        assert_eq!(expected.trim_start(), rendered);
+        let rendered = snrkl.render();
+        let expected = r#"
+········
+·1U2····
+········
+········
+"#;
+        assert_eq!(expected.trim_start(), rendered);
+
+        snrkl.tick();
+        let rendered = snrkl.render();
+        let expected = r#"
+········
+·1U2····
+··*·····
+········
+"#;
+        assert_eq!(expected.trim_start(), rendered);
+
+        snrkl.frame += 1;
+        snrkl.tick();
+        let rendered = snrkl.render();
+        let expected = r#"
+········
+·1U2····
+········
+········
+"#;
+        assert_eq!(expected.trim_start(), rendered);
+
+        snrkl.frame += 1;
+        snrkl.tick();
+        let rendered = snrkl.render();
+        let expected = r#"
+········
+·1U2····
+··*·····
 ········
 "#;
         assert_eq!(expected.trim_start(), rendered);

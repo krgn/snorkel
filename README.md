@@ -1,7 +1,6 @@
 ## TODO
 
 * compute next state on tick (i.e. implement commands)
-  - `U` uclid(step max): Bangs on Euclidean rhythm.
   - `Z` lerp(rate target): Transitions operand to input.
   - `*` bang: Bangs neighboring operands.
   - `$` self(cmd): Send a command to Orca, or load external file.
