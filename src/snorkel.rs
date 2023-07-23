@@ -281,6 +281,10 @@ impl Snorkel {
                     // ░█\█░█░█░█▀▀░█▀▄░░█░
                     // ░░▀\░▀▀▀░▀▀▀░▀░▀░░▀░
                     Some(Op::Query) => self.op_query(&coord),
+                    // ░▀█▀░█▀▄░█▀█░█▀▀░█░█
+                    // ░░█░░█▀▄░█▀█░█░░░█▀▄
+                    // ░░▀░░▀░▀░▀░▀░▀▀▀░▀░▀
+                    Some(Op::Track) => self.op_track(&coord),
                     _ => (),
                 }
             }
@@ -784,6 +788,31 @@ impl Snorkel {
         }
     }
 
+    fn op_track(&mut self, loc: &Coord) {
+        let key = self.left_of(loc, 2).and_then(|op| op.extract_num());
+        let len = self
+            .left_of(loc, 1)
+            .and_then(|op| op.extract_num())
+            .map(|n| n + 1);
+        match (key, len) {
+            (Some(key), Some(len)) => {
+                let x_off = key % len;
+                let src = Coord {
+                    x: loc.x + 1 + x_off,
+                    y: loc.y,
+                };
+                if let Some(op) = self.get_cell(&src) {
+                    let dest = Coord {
+                        x: loc.x,
+                        y: loc.y + 1,
+                    };
+                    self.set_cell(&dest, op);
+                }
+            }
+            _ => return,
+        }
+    }
+
     // ░█░█░▀█▀░▀█▀░█░░
     // ░█░█░░█░░░█░░█░░
     // ░▀▀▀░░▀░░▀▀▀░▀▀▀
@@ -1265,6 +1294,88 @@ mod tests {
 ········
 ········
 ·····123
+········
+"#;
+        assert_eq!(expected.trim_start(), rendered);
+    }
+
+    #[test]
+    fn op_track() {
+        let mut snrkl = Snorkel::new(8usize, 8usize);
+        snrkl.set_cell(&Coord { x: 1, y: 1 }, Op::Val('0')); // key
+        snrkl.set_cell(&Coord { x: 2, y: 1 }, Op::Val('2')); // len
+        snrkl.set_cell(&Coord { x: 3, y: 1 }, Op::Track);
+        snrkl.set_cell(&Coord { x: 4, y: 1 }, Op::Val('1'));
+        snrkl.set_cell(&Coord { x: 5, y: 1 }, Op::Val('2'));
+        snrkl.set_cell(&Coord { x: 6, y: 1 }, Op::Val('3'));
+        let rendered = snrkl.render();
+        let expected = r#"
+········
+·02T123·
+········
+········
+········
+········
+········
+········
+"#;
+        assert_eq!(expected.trim_start(), rendered);
+
+        snrkl.tick();
+        let rendered = snrkl.render();
+        let expected = r#"
+········
+·02T123·
+···1····
+········
+········
+········
+········
+········
+"#;
+        assert_eq!(expected.trim_start(), rendered);
+
+        snrkl.set_cell(&Coord { x: 1, y: 1 }, Op::Val('1')); // key
+        snrkl.tick();
+        let rendered = snrkl.render();
+        let expected = r#"
+········
+·12T123·
+···2····
+········
+········
+········
+········
+········
+"#;
+        assert_eq!(expected.trim_start(), rendered);
+
+        snrkl.set_cell(&Coord { x: 1, y: 1 }, Op::Val('2')); // key
+        snrkl.tick();
+        let rendered = snrkl.render();
+        let expected = r#"
+········
+·22T123·
+···3····
+········
+········
+········
+········
+········
+"#;
+        assert_eq!(expected.trim_start(), rendered);
+
+        snrkl.set_cell(&Coord { x: 1, y: 1 }, Op::Val('g')); // key
+        snrkl.tick();
+        let rendered = snrkl.render();
+        let expected = r#"
+········
+·g2T123·
+···2····
+········
+········
+········
+········
 ········
 "#;
         assert_eq!(expected.trim_start(), rendered);
