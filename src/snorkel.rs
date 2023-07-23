@@ -277,6 +277,10 @@ impl Snorkel {
                     // ░█▀▀░█░█░▀▀█░█▀█
                     // ░▀░░░▀▀▀░▀▀▀░▀░▀
                     Some(Op::Push) => self.op_push(&coord),
+                    // ░▄▀▄░█░█░█▀▀░█▀▄░█░█
+                    // ░█\█░█░█░█▀▀░█▀▄░░█░
+                    // ░░▀\░▀▀▀░▀▀▀░▀░▀░░▀░
+                    Some(Op::Query) => self.op_query(&coord),
                     _ => (),
                 }
             }
@@ -752,6 +756,34 @@ impl Snorkel {
         }
     }
 
+    pub fn op_query(&mut self, loc: &Coord) {
+        let count = match self.left_of(&loc, 1).and_then(|op| op.extract_num()) {
+            Some(c) => c,
+            None => return,
+        };
+        let y_offset = match self.left_of(&loc, 2).and_then(|op| op.extract_num()) {
+            Some(c) => c,
+            None => return,
+        };
+        let x_offset = match self.left_of(&loc, 3).and_then(|op| op.extract_num()) {
+            Some(c) => c,
+            None => return,
+        };
+
+        for i in (0..count).rev() {
+            if let Some(op) = self.get_cell(&Coord {
+                x: loc.x + 1 + x_offset + i,
+                y: loc.y + y_offset,
+            }) {
+                let dest = Coord {
+                    x: loc.x.checked_sub(count).unwrap_or(0) + (i + 1),
+                    y: loc.y + 1,
+                };
+                self.set_cell(&dest, op);
+            };
+        }
+    }
+
     // ░█░█░▀█▀░▀█▀░█░░
     // ░█░█░░█░░░█░░█░░
     // ░▀▀▀░░▀░░▀▀▀░▀▀▀
@@ -1183,6 +1215,58 @@ mod tests {
 ·········U
 "#;
 
+        assert_eq!(expected.trim_start(), rendered);
+    }
+
+    #[test]
+    fn op_query() {
+        let mut snrkl = Snorkel::new(8, 8);
+        snrkl.set_cell(&Coord { x: 5, y: 6 }, Op::Val('1'));
+        snrkl.set_cell(&Coord { x: 6, y: 6 }, Op::Val('2'));
+        snrkl.set_cell(&Coord { x: 7, y: 6 }, Op::Val('3'));
+        let rendered = snrkl.render();
+        let expected = r#"
+········
+········
+········
+········
+········
+········
+·····123
+········
+"#;
+        assert_eq!(expected.trim_start(), rendered);
+
+        snrkl.set_cell(&Coord { x: 3, y: 1 }, Op::Query);
+        snrkl.set_cell(&Coord { x: 2, y: 1 }, Op::Val('3'));
+        snrkl.set_cell(&Coord { x: 1, y: 1 }, Op::Val('5'));
+        snrkl.set_cell(&Coord { x: 0, y: 1 }, Op::Val('1'));
+
+        let rendered = snrkl.render();
+        let expected = r#"
+········
+153Q····
+········
+········
+········
+········
+·····123
+········
+"#;
+        assert_eq!(expected.trim_start(), rendered);
+        snrkl.tick();
+
+        let rendered = snrkl.render();
+        let expected = r#"
+········
+153Q····
+·123····
+········
+········
+········
+·····123
+········
+"#;
         assert_eq!(expected.trim_start(), rendered);
     }
 }

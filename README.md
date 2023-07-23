@@ -1,7 +1,6 @@
 ## TODO
 
 * compute next state on tick (i.e. implement commands)
-  - `Q` query(x y len): Reads operands with offset.
   - `T` track(key len val): Reads eastward operand.
   - `U` uclid(step max): Bangs on Euclidean rhythm.
   - `Z` lerp(rate target): Transitions operand to input.
