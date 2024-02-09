@@ -18,7 +18,7 @@ harness = false
 
 [dependencies]
 crossterm = "0.26.1"
-jumprope = "1.1.1"
+jumprope = "1.1.2"
 libc = "0.2.140"
 ndhistogram = "0.8.0"
 nom = "7.1.3"
